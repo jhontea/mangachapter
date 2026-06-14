@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"project/mangachapter/internal/notifier"
 	"project/mangachapter/internal/source"
@@ -12,9 +15,10 @@ import (
 )
 
 const (
-	maxRetries      = 2
-	retryBackoff    = 2 * time.Second
-	contextTimeout  = 30 * time.Second
+	maxRetries     = 2
+	retryBackoff   = 2 * time.Second
+	contextTimeout = 30 * time.Second
+	maxConcurrent  = 10 // max concurrent checks
 )
 
 // Result represents the outcome of checking a single manga.
@@ -44,8 +48,8 @@ func New(repo storage.Repository, sources map[string]source.Source, n notifier.N
 	}
 }
 
-// CheckAll checks all tracked manga for new chapters.
-// Returns a summary of results.
+// CheckAll checks all tracked manga for new chapters concurrently using errgroup.
+// It waits for all checks to complete before returning.
 func (c *Checker) CheckAll(ctx context.Context) ([]Result, error) {
 	mangaList, err := c.repo.ListManga(ctx)
 	if err != nil {
@@ -54,31 +58,50 @@ func (c *Checker) CheckAll(ctx context.Context) ([]Result, error) {
 
 	slog.Info("checking all manga", "count", len(mangaList))
 
-	var results []Result
-	for _, m := range mangaList {
-		r := c.checkOne(ctx, m)
-		results = append(results, r)
+	g, gctx := errgroup.WithContext(ctx)
+	g.SetLimit(maxConcurrent)
 
-		// Log result
-		if r.Error != nil {
-			slog.Error("check failed",
-				"manga_id", m.ID,
-				"title", m.Title,
-				"source", m.Source,
-				"error", r.Error,
-			)
-		} else if r.NewChapter != "" {
-			slog.Info("new chapter found",
-				"manga_id", m.ID,
-				"title", m.Title,
-				"chapter", r.NewChapter,
-			)
-		} else {
-			slog.Debug("no new chapter",
-				"manga_id", m.ID,
-				"title", m.Title,
-			)
-		}
+	var (
+		mu      sync.Mutex
+		results []Result
+	)
+
+	for _, m := range mangaList {
+		m := m // capture loop variable
+		g.Go(func() error {
+			r := c.checkOne(gctx, m)
+
+			mu.Lock()
+			results = append(results, r)
+			mu.Unlock()
+
+			// Log result
+			if r.Error != nil {
+				slog.Error("check failed",
+					"manga_id", m.ID,
+					"title", m.Title,
+					"source", m.Source,
+					"error", r.Error,
+				)
+			} else if r.NewChapter != "" {
+				slog.Info("new chapter found",
+					"manga_id", m.ID,
+					"title", m.Title,
+					"chapter", r.NewChapter,
+				)
+			} else {
+				slog.Debug("no new chapter",
+					"manga_id", m.ID,
+					"title", m.Title,
+				)
+			}
+
+			return nil // don't propagate individual errors to errgroup
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, fmt.Errorf("errgroup: %w", err)
 	}
 
 	// Print summary
