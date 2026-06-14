@@ -1,0 +1,29 @@
+# Binaries
+/manga
+/manga.exe
+/bin/
+*.exe
+
+# Config with secrets
+config.yaml
+
+# Database
+/data/
+*.db
+
+# Go
+/vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test / temp
+*.log
+/tmp/

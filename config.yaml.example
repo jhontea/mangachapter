@@ -1,0 +1,32 @@
+# Salin ke config.yaml dan edit sesuai kebutuhan.
+# cp config.yaml.example config.yaml
+
+scheduler:
+  interval: "1h"
+  # cron: "0 * * * *"   # uncomment untuk pakai cron (override interval)
+
+email:
+  enabled: true
+  smtp_host: "smtp.gmail.com"
+  smtp_port: 587
+  username: "your@gmail.com"
+  password: ""            # gunakan env MANGA_SMTP_PASSWORD
+  from: "your@gmail.com"
+  to:
+    - "your@gmail.com"
+
+storage:
+  path: "./data/manga.db"
+
+sources:
+  kiryuu:
+    base_url: "https://v6.kiryuu.to"
+    user_agent: "MangaChapterNotifier/1.0 (+personal use)"
+    rate_limit: "2s"
+
+  mangaplus:
+    base_url: "https://mangaplus.shueisha.co.jp"
+    language: "eng"
+
+log:
+  level: "info"

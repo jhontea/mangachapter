@@ -1,0 +1,79 @@
+package source
+
+import (
+	"testing"
+)
+
+func TestParseChapterNumber(t *testing.T) {
+	tests := []struct {
+		input     string
+		wantNum   float64
+		wantTitle string
+	}{
+		{"Chapter 123", 123, "Chapter 123"},
+		{"Ch. 123", 123, "Chapter 123"},
+		{"Ch 123", 123, "Chapter 123"},
+		{"chapter 123.5", 123.5, "Chapter 123.5"},
+		{"123", 123, "Chapter 123"},
+		{"Chapter 123 - Special", 123, "Chapter 123"},
+		{"Chapter 1130", 1130, "Chapter 1130"},
+		{"Chapter 0.5", 0.5, "Chapter 0.5"},
+		{"  Chapter 42  ", 42, "Chapter 42"},
+		{"No chapter here", 0, "No chapter here"},
+		{"", 0, ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			gotNum, gotTitle := ParseChapterNumber(tt.input)
+			if gotNum != tt.wantNum {
+				t.Errorf("ParseChapterNumber(%q) num = %v, want %v", tt.input, gotNum, tt.wantNum)
+			}
+			if gotTitle != tt.wantTitle {
+				t.Errorf("ParseChapterNumber(%q) title = %q, want %q", tt.input, gotTitle, tt.wantTitle)
+			}
+		})
+	}
+}
+
+func TestExtractSlug(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"https://v6.kiryuu.to/manga/one-piece/", "one-piece"},
+		{"https://v6.kiryuu.to/manga/one-piece", "one-piece"},
+		{"https://v6.kiryuu.to/manga/jujutsu-kaisen/", "jujutsu-kaisen"},
+		{"https://example.com/just-a-slug/", "just-a-slug"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got := extractSlug(tt.input)
+			if got != tt.want {
+				t.Errorf("extractSlug(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestExtractTitleID(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"100020", "100020"},
+		{"https://mangaplus.shueisha.co.jp/titles/100020", "100020"},
+		{"https://mangaplus.shueisha.co.jp/titles/100020/", "100020"},
+		{"https://mangaplus.shueisha.co.jp/titles/100026/overview", "100026"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got := extractTitleID(tt.input)
+			if got != tt.want {
+				t.Errorf("extractTitleID(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
