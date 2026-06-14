@@ -626,15 +626,30 @@
             }
         }
 
-        // Button loading state
-        function setLoading(btn, loading) {
-            if (loading) {
+        // Track which button IDs are currently loading
+        const loadingButtons = new Set();
+
+        // Apply loading state to a specific button element
+        function applyLoadingState(btnId) {
+            const btn = document.getElementById(btnId);
+            if (btn) {
                 btn.classList.add('loading');
                 btn.disabled = true;
-            } else {
+            }
+        }
+
+        // Remove loading state from a specific button element
+        function clearLoadingState(btnId) {
+            const btn = document.getElementById(btnId);
+            if (btn) {
                 btn.classList.remove('loading');
                 btn.disabled = false;
             }
+        }
+
+        // Re-apply all active loading states (call after DOM rebuild)
+        function restoreLoadingStates() {
+            loadingButtons.forEach(id => applyLoadingState(id));
         }
 
         // Load manga list
@@ -742,8 +757,9 @@
             if (source === 'kiryuu' && !url) { showToast('URL is required for Kiryuu', 'error'); return; }
             if (source === 'mangaplus' && !sourceId) { showToast('Title ID is required for MangaPlus', 'error'); return; }
 
-            const btn = document.getElementById('btn-add');
-            setLoading(btn, true);
+            const btnId = 'btn-add';
+            loadingButtons.add(btnId);
+            applyLoadingState(btnId);
 
             try {
                 const body = { source, title };
@@ -760,7 +776,8 @@
                 document.getElementById('add-url').value = '';
                 document.getElementById('add-id').value = '';
             } catch (e) {} finally {
-                setLoading(btn, false);
+                loadingButtons.delete(btnId);
+                clearLoadingState(btnId);
             }
         }
 
@@ -783,8 +800,9 @@
 
         // Check single manga
         async function checkOne(id) {
-            const btn = document.getElementById('btn-check-' + id);
-            setLoading(btn, true);
+            const btnId = 'btn-check-' + id;
+            loadingButtons.add(btnId);
+            applyLoadingState(btnId);
             try {
                 const result = await api(`/api/manga/${id}`, { method: 'POST' });
                 if (result.NewChapter) {
@@ -794,16 +812,19 @@
                 } else {
                     showToast(`No new chapter for "${result.Title}"`, 'info');
                 }
-                loadManga();
             } catch (e) {} finally {
-                setLoading(btn, false);
+                loadingButtons.delete(btnId);
+                clearLoadingState(btnId);
+                loadManga();
+                restoreLoadingStates();
             }
         }
 
         // Check all manga
         async function doCheckAll() {
-            const btn = document.getElementById('btn-check-all');
-            setLoading(btn, true);
+            const btnId = 'btn-check-all';
+            loadingButtons.add(btnId);
+            applyLoadingState(btnId);
 
             const container = document.getElementById('check-results');
             container.innerHTML = '<div class="empty"><div class="spinner" style="width:20px;height:20px;border-width:2px;border-color:#3f3f46;border-top-color:#7c3aed;margin:0 auto;"></div><p style="margin-top:10px;color:#71717a;">Checking all manga...</p></div>';
@@ -838,11 +859,13 @@
                     </div>`;
                 }
                 container.innerHTML = html;
-                loadManga();
             } catch (e) {
                 container.innerHTML = '<div class="empty"><p>Check failed</p></div>';
             } finally {
-                setLoading(btn, false);
+                loadingButtons.delete(btnId);
+                clearLoadingState(btnId);
+                loadManga();
+                restoreLoadingStates();
             }
         }
 
