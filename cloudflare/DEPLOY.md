@@ -4,21 +4,49 @@
 
 ```
 Cloudflare Pages (mangachapterweb.pages.dev)
-+-- public/index.html          # Web UI (static)
-+-- functions/                 # API endpoints (Pages Functions)
-    +-- api/
-        +-- sources.js         # GET /api/sources
-        +-- manga/
-            +-- index.js       # GET/POST /api/manga
-            +-- [id].js        # GET/POST/DELETE /api/manga/:id
-            +-- search.js      # GET /api/manga/search
-            +-- check-all.js   # POST /api/manga/check-all
+├── public/index.html          # Web UI (static)
+└── functions/                 # API endpoints (Pages Functions)
+    └── api/
+        ├── sources.js         # GET /api/sources
+        └── manga/
+            ├── index.js       # GET/POST /api/manga
+            ├── [id].js        # GET/POST/DELETE /api/manga/:id
+            ├── search.js      # GET /api/manga/search
+            └── check-all.js   # POST /api/manga/check-all
 
 Cloudflare Worker (mangachapter-scheduler)
-+-- Cron: setiap jam, cek update + kirim Telegram
+└── Cron: setiap jam, cek update + kirim Telegram
 
 Cloudflare D1 (mangachapter-db)
-+-- tracked_manga, notifications tables
+└── tracked_manga, notifications tables
+```
+
+## Struktur Folder
+
+```
+cloudflare/
+├── wrangler.toml              # Config untuk Pages
+├── scheduler-wrangler.toml    # Config untuk Scheduler Worker
+├── package.json
+├── .gitignore
+├── DEPLOY.md                  # File ini
+├── public/                    # Web UI (deploy ke Pages)
+│   └── index.html
+├── functions/                 # API endpoints
+│   └── api/
+│       ├── sources.js
+│       └── manga/
+│           ├── index.js
+│           ├── [id].js
+│           ├── search.js
+│           └── check-all.js
+├── src/                       # Shared modules
+│   ├── scheduler.js           # Cron Worker
+│   ├── telegram.js
+│   ├── kiryuu.js
+│   └── mangaplus.js
+└── migrations/
+    └── 0001_init.sql
 ```
 
 ## Prasyarat
@@ -55,6 +83,7 @@ npx wrangler d1 execute mangachapter-db --file=./migrations/0001_init.sql
 ### 4. Deploy Web UI + API (Pages)
 
 ```bash
+cd cloudflare
 npx wrangler pages deploy ./public
 ```
 
@@ -77,6 +106,7 @@ npx wrangler pages secret put TELEGRAM_CHAT_ID
 ### 6. Deploy Scheduler Worker (Cron)
 
 ```bash
+cd cloudflare
 npx wrangler deploy src/scheduler.js --name mangachapter-scheduler --config scheduler-wrangler.toml
 ```
 
@@ -117,13 +147,16 @@ curl -X POST https://mangachapterweb.pages.dev/api/manga/check-all
 
 ## Troubleshooting
 
+### Error: "ENOENT: no such file or directory, scandir 'public'"
+Pastikan folder `cloudflare/public/` ada dan berisi `index.html`.
+
 ### Error: "Unexpected token '<', not valid JSON"
 API request mengembalikan HTML alih-alih JSON. Pastikan:
 1. File functions ada di folder `cloudflare/functions/`
 2. Deploy ulang: `npx wrangler pages deploy ./public`
 
 ### Error: "TELEGRAM_TOKEN not found"
-Pastikan sudah set secrets untuk Pages:
+Pastikan sudah set secrets:
 ```bash
 npx wrangler pages secret put TELEGRAM_TOKEN
 ```
