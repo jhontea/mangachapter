@@ -820,7 +820,8 @@
             }
         }
 
-        // Check all manga
+        // Check all manga — fires individual checkOne requests concurrently,
+        // results appear one-by-one as each finishes
         async function doCheckAll() {
             const btnId = 'btn-check-all';
             loadingButtons.add(btnId);
@@ -830,35 +831,77 @@
             container.innerHTML = '<div class="empty"><div class="spinner" style="width:20px;height:20px;border-width:2px;border-color:#3f3f46;border-top-color:#7c3aed;margin:0 auto;"></div><p style="margin-top:10px;color:#71717a;">Checking all manga...</p></div>';
 
             try {
-                const results = await api('/api/manga/check-all', { method: 'POST' });
-                if (!results || results.length === 0) {
+                // 1. Fetch manga list
+                const items = await api('/api/manga');
+                if (!items || items.length === 0) {
                     container.innerHTML = '<div class="empty"><p>No manga to check</p></div>';
                     return;
                 }
 
+                // 2. Clear loading text, prepare results area
                 let html = '';
-                for (const r of results) {
-                    let icon = '✅';
-                    let detail = 'No new chapter';
-                    let badgeClass = 'badge-ok';
-                    if (r.Error) {
-                        icon = '❌';
-                        detail = r.Error;
-                        badgeClass = 'badge-error';
-                    } else if (r.NewChapter) {
-                        icon = '🆕';
-                        detail = `New: ${r.NewChapter}`;
-                        badgeClass = 'badge-new';
-                    }
-                    html += `<div class="check-item">
-                        <div class="check-icon">${icon}</div>
-                        <div class="check-info">
-                            <div class="check-title">${r.Title} <span class="badge ${badgeClass}">${r.Source}</span></div>
-                            <div class="check-detail">${detail}</div>
-                        </div>
-                    </div>`;
-                }
+                let countDone = 0;
+                let countTotal = items.length;
+
+                // Update status line
+                const statusId = 'check-status-' + Date.now();
+                html = `<div id="${statusId}" class="check-item">
+                    <div class="check-icon">⏳</div>
+                    <div class="check-info">
+                        <div class="check-detail">Checking 0/${countTotal}...</div>
+                    </div>
+                </div>`;
                 container.innerHTML = html;
+
+                // 3. Fire all checks concurrently
+                const promises = items.map((m) =>
+                    api(`/api/manga/${m.ID}`, { method: 'POST' })
+                        .then((r) => ({ manga: m, result: r }))
+                        .catch((e) => ({ manga: m, result: { Error: e.message } }))
+                );
+
+                // 4. As each settles, append result to container
+                for (const promise of promises) {
+                    promise.then(({ manga: m, result: r }) => {
+                        countDone++;
+                        let icon = '✅';
+                        let detail = 'No new chapter';
+                        let badgeClass = 'badge-ok';
+                        if (r.Error) {
+                            icon = '❌';
+                            detail = r.Error;
+                            badgeClass = 'badge-error';
+                        } else if (r.NewChapter) {
+                            icon = '🆕';
+                            detail = `New: ${r.NewChapter}`;
+                            badgeClass = 'badge-new';
+                        }
+                        const badgeSource = m.Source === 'kiryuu' ? 'badge-kiryuu' : 'badge-mangaplus';
+                        const itemHtml = `<div class="check-item">
+                            <div class="check-icon">${icon}</div>
+                            <div class="check-info">
+                                <div class="check-title">${m.Title} <span class="badge ${badgeSource}">${m.Source}</span></div>
+                                <div class="check-detail">${detail}</div>
+                            </div>
+                        </div>`;
+
+                        // Insert before the status line
+                        const statusEl = document.getElementById(statusId);
+                        if (statusEl) {
+                            statusEl.insertAdjacentHTML('beforebegin', itemHtml);
+                            // Update status counter
+                            const detailEl = statusEl.querySelector('.check-detail');
+                            if (detailEl) detailEl.textContent = `Checking ${countDone}/${countTotal}...`;
+                        }
+                    });
+                }
+
+                // 5. Wait for all to settle
+                await Promise.allSettled(promises);
+
+                // Remove status line
+                const statusEl = document.getElementById(statusId);
+                if (statusEl) statusEl.remove();
             } catch (e) {
                 container.innerHTML = '<div class="empty"><p>Check failed</p></div>';
             } finally {
