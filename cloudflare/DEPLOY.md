@@ -76,9 +76,14 @@ Output akan memberikan `database_id`. Copy ID tersebut ke:
 
 ### 3. Jalankan Migrasi Database
 
+**PENTING:** Gunakan `--remote` flag untuk migrasi ke D1 production:
+
 ```bash
-npx wrangler d1 execute mangachapter-db --file=./migrations/0001_init.sql
+cd cloudflare
+npx wrangler d1 execute mangachapter-db --remote --file=./migrations/0001_init.sql
 ```
+
+Tanpa `--remote`, migrasi hanya berjalan di database lokal (miniflare) dan tidak akan mempengaruhi D1 production.
 
 ### 4. Deploy Web UI + API (Pages)
 
@@ -146,6 +151,12 @@ curl -X POST https://mangachapterweb.pages.dev/api/manga/check-all
 ```
 
 ## Troubleshooting
+
+### Error: "D1_ERROR: no such table: tracked_manga"
+Migrasi belum dijalankan ke D1 remote. Jalankan:
+```bash
+npx wrangler d1 execute mangachapter-db --remote --file=./migrations/0001_init.sql
+```
 
 ### Error: "ENOENT: no such file or directory, scandir 'public'"
 Pastikan folder `cloudflare/public/` ada dan berisi `index.html`.
