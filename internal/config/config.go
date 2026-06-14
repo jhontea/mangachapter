@@ -111,7 +111,7 @@ func defaultConfig() *Config {
 	return &Config{
 		Scheduler: SchedulerConfig{Interval: defaultInterval},
 		Email:     EmailConfig{Enabled: true, SMTPPort: 587},
-		Telegram:  TelegramConfig{Enabled: false},
+		Telegram:  TelegramConfig{Enabled: true},
 		Storage:   StorageConfig{Path: defaultDBPath},
 		Sources: SourcesConfig{
 			Kiryuu: KiryuuConfig{

@@ -88,8 +88,11 @@ func (s *server) init() error {
 	mangaplus := source.NewMangaPlus(cfg.Sources.MangaPlus.Language)
 	source.Register("mangaplus", mangaplus)
 
-	// Initialize notifier
-	if cfg.Email.Enabled {
+	// Initialize notifier — prefer Telegram if enabled, fall back to email
+	if cfg.Telegram.Enabled {
+		s.notifier = notifier.NewTelegram(cfg.Telegram.Token, cfg.Telegram.ChatID)
+		slog.Info("notifier: telegram enabled")
+	} else if cfg.Email.Enabled {
 		s.notifier = notifier.NewEmail(
 			cfg.Email.SMTPHost,
 			cfg.Email.SMTPPort,
@@ -98,6 +101,9 @@ func (s *server) init() error {
 			cfg.Email.From,
 			cfg.Email.To,
 		)
+		slog.Info("notifier: email enabled")
+	} else {
+		slog.Warn("notifier: no notifier configured")
 	}
 
 	s.checker = checker.New(s.repo, source.AvailableMap(), s.notifier)
@@ -135,9 +141,9 @@ func (s *server) handleManga(w http.ResponseWriter, r *http.Request) {
 
 	case http.MethodPost:
 		var req struct {
-			Source  string `json:"source"`
-			Title   string `json:"title"`
-			URL     string `json:"url"`
+			Source   string `json:"source"`
+			Title    string `json:"title"`
+			URL      string `json:"url"`
 			SourceID string `json:"source_id"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
