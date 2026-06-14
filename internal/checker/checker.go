@@ -171,7 +171,8 @@ func (c *Checker) checkOne(ctx context.Context, m storage.TrackedManga) Result {
 			break
 		}
 	}
-
+	fmt.Printf(">>> current (db) m %+v\n", m)
+	fmt.Printf(">>> latest (web) ch %+v\n", ch)
 	if err != nil {
 		return Result{
 			MangaID: m.ID,

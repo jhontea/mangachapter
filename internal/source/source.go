@@ -107,7 +107,7 @@ func (h *HTTPClient) Do(req *http.Request) (*http.Response, error) {
 
 // chapterRe matches chapter numbers in various formats.
 // Examples: "Chapter 123", "Ch. 123", "Ch 123.5", "123", "#236", "Manga Name Chapter 446", "chapter-446"
-var chapterRe = regexp.MustCompile(`(?i)(?:chapter|ch\.?)\s*[#]?(\d+(?:\.\d+)?)|^(\d+(?:\.\d+)?)$`)
+var chapterRe = regexp.MustCompile(`(?i)(?:chapter|ch\.?)\s*[#]?(\d+(?:\.\d+)?)|^(\d+(?:\.\d+)?)$|^#(\d+(?:\.\d+)?)`)
 
 // ParseChapterNumber extracts a numeric chapter value from a string.
 // Returns 0 and the original string if no number is found.
@@ -118,10 +118,13 @@ func ParseChapterNumber(s string) (float64, string) {
 		return 0, s
 	}
 
-	// matches[1] is from the capture group, matches[2] is from the alternative
+	// matches[1] is from (chapter|ch) group, matches[2] from standalone number, matches[3] from #number
 	numStr := matches[1]
 	if numStr == "" {
 		numStr = matches[2]
+	}
+	if numStr == "" {
+		numStr = matches[3]
 	}
 
 	val, err := strconv.ParseFloat(numStr, 64)

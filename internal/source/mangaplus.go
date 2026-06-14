@@ -35,9 +35,9 @@ type mangaPlusResponse struct {
 }
 
 type mangaPlusSuccess struct {
-	TitleDetailView   *mangaPlusTitleDetailView   `json:"titleDetailView"`
-	AllTitlesViewV2   *mangaPlusAllTitlesViewV2   `json:"allTitlesViewV2"`
-	RegisterationData *mangaPlusRegistrationData  `json:"registerationData"`
+	TitleDetailView   *mangaPlusTitleDetailView  `json:"titleDetailView"`
+	AllTitlesViewV2   *mangaPlusAllTitlesViewV2  `json:"allTitlesViewV2"`
+	RegisterationData *mangaPlusRegistrationData `json:"registerationData"`
 }
 
 type mangaPlusRegistrationData struct {
