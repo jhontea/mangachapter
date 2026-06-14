@@ -36,7 +36,7 @@ func TestParseChapterNumber(t *testing.T) {
 	}
 }
 
-func TestExtractSlug(t *testing.T) {
+func TestExtractSlugFromURL(t *testing.T) {
 	tests := []struct {
 		input string
 		want  string
@@ -44,14 +44,16 @@ func TestExtractSlug(t *testing.T) {
 		{"https://v6.kiryuu.to/manga/one-piece/", "one-piece"},
 		{"https://v6.kiryuu.to/manga/one-piece", "one-piece"},
 		{"https://v6.kiryuu.to/manga/jujutsu-kaisen/", "jujutsu-kaisen"},
-		{"https://example.com/just-a-slug/", "just-a-slug"},
+		{"https://example.com/manga/just-a-slug/", "just-a-slug"},
+		{"https://example.com/no-manga-path/", ""},
+		{"", ""},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
-			got := extractSlug(tt.input)
+			got := extractSlugFromURL(tt.input)
 			if got != tt.want {
-				t.Errorf("extractSlug(%q) = %q, want %q", tt.input, got, tt.want)
+				t.Errorf("extractSlugFromURL(%q) = %q, want %q", tt.input, got, tt.want)
 			}
 		})
 	}

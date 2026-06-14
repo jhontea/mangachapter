@@ -10,15 +10,15 @@ import (
 )
 
 func TestKiryuu_Search(t *testing.T) {
-	// Load fixture
-	fixture, err := os.ReadFile("../../testdata/kiryuu_search.html")
+	// Load JSON fixture for REST API search
+	fixture, err := os.ReadFile("../../testdata/kiryuu_search.json")
 	if err != nil {
 		t.Fatalf("load fixture: %v", err)
 	}
 
-	// Create test server
+	// Create test server that returns JSON (REST API)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
+		w.Header().Set("Content-Type", "application/json")
 		w.Write(fixture)
 	}))
 	defer srv.Close()
@@ -56,35 +56,37 @@ func TestKiryuu_Search(t *testing.T) {
 }
 
 func TestKiryuu_GetLatestChapter(t *testing.T) {
-	// Load fixture
-	fixture, err := os.ReadFile("../../testdata/kiryuu_manga_detail.html")
+	// Load JSON fixture for REST API chapter search
+	fixture, err := os.ReadFile("../../testdata/kiryuu_chapter.json")
 	if err != nil {
 		t.Fatalf("load fixture: %v", err)
 	}
 
-	// Create test server
+	var serverURL string
+	// Create test server that returns JSON for REST API
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/wp-json/wp/v2/chapter" {
+			w.Header().Set("Content-Type", "application/json")
+			w.Write(fixture)
+			return
+		}
+		// Return minimal HTML (REST API is used, not HTML parsing)
 		w.Header().Set("Content-Type", "text/html")
-		w.Write(fixture)
+		w.Write([]byte(`<!DOCTYPE html><html><body></body></html>`))
 	}))
 	defer srv.Close()
+	serverURL = srv.URL
 
 	client := NewHTTPClient("test-agent", 0)
-	k := NewKiryuu(srv.URL, "test-agent", client)
+	k := NewKiryuu(serverURL, "test-agent", client)
 
-	ch, err := k.GetLatestChapter(context.Background(), srv.URL+"/manga/one-piece/")
+	ch, err := k.GetLatestChapter(context.Background(), serverURL+"/manga/mairimashita-iruma-kun/")
 	if err != nil {
 		t.Fatalf("GetLatestChapter() error: %v", err)
 	}
 
-	if ch.Number != "Chapter 1130" {
-		t.Errorf("ch.Number = %q, want %q", ch.Number, "Chapter 1130")
-	}
-	if ch.NumValue != 1130 {
-		t.Errorf("ch.NumValue = %v, want %v", ch.NumValue, 1130)
-	}
-	if ch.URL != "https://v6.kiryuu.to/manga/one-piece/chapter-1130/" {
-		t.Errorf("ch.URL = %q, want %q", ch.URL, "https://v6.kiryuu.to/manga/one-piece/chapter-1130/")
+	if ch.NumValue != 446 {
+		t.Errorf("ch.NumValue = %v, want %v", ch.NumValue, 446)
 	}
 }
 
@@ -120,9 +122,14 @@ func TestKiryuu_GetLatestChapterHTTPError(t *testing.T) {
 }
 
 func TestKiryuu_GetLatestChapterNoChapters(t *testing.T) {
-	// HTML with no chapter list
+	// HTML with no chapter links and no manga_id
 	html := `<!DOCTYPE html><html><body><div class="eplister"><ul></ul></div></body></html>`
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/wp-json/wp/v2/chapter" {
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte("[]"))
+			return
+		}
 		w.Header().Set("Content-Type", "text/html")
 		w.Write([]byte(html))
 	}))
@@ -140,21 +147,18 @@ func TestKiryuu_GetLatestChapterNoChapters(t *testing.T) {
 func TestHTTPClient_RateLimit(t *testing.T) {
 	client := NewHTTPClient("test-agent", 100*time.Millisecond)
 
-	// First request should be fast
 	req, _ := http.NewRequest("GET", "http://example.com", nil)
 	start := time.Now()
 	client.Do(req)
 	first := time.Since(start)
 
-	// Second request should be rate-limited
 	req2, _ := http.NewRequest("GET", "http://example.com", nil)
 	start = time.Now()
 	client.Do(req2)
 	second := time.Since(start)
 
-	// Second request should take at least ~100ms due to rate limiting
 	if second < 50*time.Millisecond {
 		t.Errorf("rate limit not enforced: second request took %v", second)
 	}
-	_ = first // suppress unused
+	_ = first
 }

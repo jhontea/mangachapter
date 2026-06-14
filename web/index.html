@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manga Chapter Notifier</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 24px 32px;
+            border-bottom: 1px solid #2a2a4a;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header h1 {
+            font-size: 24px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header h1 span { font-size: 28px; }
+        .header .subtitle {
+            color: #888;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 24px;
+            background: #1a1a2e;
+            border-radius: 10px;
+            padding: 4px;
+        }
+        .tab {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            background: transparent;
+            color: #888;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .tab:hover { color: #ccc; background: #252540; }
+        .tab.active {
+            background: #2a2a5a;
+            color: #fff;
+        }
+        .panel { display: none; }
+        .panel.active { display: block; }
+        .card {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .card h3 {
+            font-size: 16px;
+            margin-bottom: 16px;
+            color: #fff;
+        }
+        .form-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px 14px;
+            background: #0f0f1a;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus {
+            border-color: #5a5aff;
+        }
+        input::placeholder { color: #555; }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary {
+            background: #5a5aff;
+            color: #fff;
+        }
+        .btn-primary:hover { background: #4a4aee; }
+        .btn-danger {
+            background: #ff4a4a;
+            color: #fff;
+        }
+        .btn-danger:hover { background: #ee3a3a; }
+        .btn-success {
+            background: #2ecc71;
+            color: #fff;
+        }
+        .btn-success:hover { background: #27ae60; }
+        .btn-secondary {
+            background: #2a2a4a;
+            color: #ccc;
+        }
+        .btn-secondary:hover { background: #3a3a5a; }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #2a2a4a;
+        }
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #1a1a2e;
+            font-size: 14px;
+        }
+        tr:hover td { background: #1a1a30; }
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-kiryuu { background: #2a1a3a; color: #b388ff; }
+        .badge-mangaplus { background: #1a2a3a; color: #82b1ff; }
+        .badge-new { background: #1a3a1a; color: #69f0ae; }
+        .badge-ok { background: #1a2a1a; color: #a5d6a7; }
+        .badge-error { background: #3a1a1a; color: #ef9a9a; }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #555;
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+        .empty-state p { font-size: 14px; }
+        .search-results {
+            margin-top: 16px;
+        }
+        .search-result-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #0f0f1a;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .search-result-item .title {
+            font-size: 14px;
+            color: #e0e0e0;
+        }
+        .search-result-item .url {
+            font-size: 12px;
+            color: #666;
+            margin-top: 2px;
+        }
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #fff;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+        }
+        .toast-success { background: #2ecc71; }
+        .toast-error { background: #e74c3c; }
+        .toast-info { background: #3498db; }
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #555;
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .check-results {
+            margin-top: 16px;
+        }
+        .check-result-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: #0f0f1a;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .check-result-item .status-icon {
+            font-size: 20px;
+        }
+        .check-result-item .info {
+            flex: 1;
+        }
+        .check-result-item .info .title {
+            font-size: 14px;
+            color: #e0e0e0;
+        }
+        .check-result-item .info .detail {
+            font-size: 12px;
+            color: #888;
+            margin-top: 2px;
+        }
+        .actions-cell {
+            display: flex;
+            gap: 6px;
+        }
+        .link {
+            color: #5a5aff;
+            text-decoration: none;
+        }
+        .link:hover { text-decoration: underline; }
+        .stats-bar {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            flex: 1;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            border-radius: 12px;
+            padding: 16px 20px;
+            text-align: center;
+        }
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .stat-card .label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .form-row { flex-direction: column; }
+            .form-group { min-width: 100%; }
+            .stats-bar { flex-direction: column; }
+            .header { padding: 16px; }
+            .header h1 { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1><span>📚</span> Manga Chapter Notifier</h1>
+            <div class="subtitle">Track manga chapter updates from Kiryuu & MangaPlus</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('manga')">📖 My Manga</button>
+            <button class="tab" onclick="switchTab('search')">🔍 Search</button>
+            <button class="tab" onclick="switchTab('add')">➕ Add Manga</button>
+            <button class="tab" onclick="switchTab('check')">🔄 Check Updates</button>
+        </div>
+
+        <!-- My Manga Panel -->
+        <div id="panel-manga" class="panel active">
+            <div class="stats-bar" id="stats-bar">
+                <div class="stat-card">
+                    <div class="value" id="stat-total">0</div>
+                    <div class="label">Tracked</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="stat-kiryuu">0</div>
+                    <div class="label">Kiryuu</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="stat-mangaplus">0</div>
+                    <div class="label">MangaPlus</div>
+                </div>
+            </div>
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                    <h3>Tracked Manga</h3>
+                    <button class="btn btn-secondary btn-sm" onclick="loadManga()">↻ Refresh</button>
+                </div>
+                <div id="manga-list"></div>
+            </div>
+        </div>
+
+        <!-- Search Panel -->
+        <div id="panel-search" class="panel">
+            <div class="card">
+                <h3>Search Manga</h3>
+                <div class="form-row">
+                    <div class="form-group" style="max-width:200px;">
+                        <label>Source</label>
+                        <select id="search-source">
+                            <option value="kiryuu">Kiryuu</option>
+                            <option value="mangaplus">MangaPlus</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Query</label>
+                        <input type="text" id="search-query" placeholder="Enter manga title..." onkeydown="if(event.key==='Enter')doSearch()">
+                    </div>
+                    <div style="display:flex;align-items:flex-end;">
+                        <button class="btn btn-primary" onclick="doSearch()">Search</button>
+                    </div>
+                </div>
+                <div id="search-results" class="search-results"></div>
+            </div>
+        </div>
+
+        <!-- Add Manga Panel -->
+        <div id="panel-add" class="panel">
+            <div class="card">
+                <h3>Add Manga to Track</h3>
+                <div class="form-row">
+                    <div class="form-group" style="max-width:200px;">
+                        <label>Source</label>
+                        <select id="add-source" onchange="updateAddForm()">
+                            <option value="kiryuu">Kiryuu</option>
+                            <option value="mangaplus">MangaPlus</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" id="add-title" placeholder="Manga title">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" id="add-url-group">
+                        <label>URL</label>
+                        <input type="text" id="add-url" placeholder="https://v6.kiryuu.to/manga/slug/">
+                    </div>
+                    <div class="form-group" id="add-id-group" style="display:none;">
+                        <label>Title ID</label>
+                        <input type="text" id="add-id" placeholder="Numeric title ID">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="doAdd()" id="btn-add">Add Manga</button>
+            </div>
+        </div>
+
+        <!-- Check Updates Panel -->
+        <div id="panel-check" class="panel">
+            <div class="card">
+                <h3>Check for New Chapters</h3>
+                <p style="color:#888;font-size:14px;margin-bottom:16px;">
+                    Check all tracked manga for new chapter updates.
+                </p>
+                <button class="btn btn-success" onclick="doCheckAll()" id="btn-check-all">🔄 Check All</button>
+                <div id="check-results" class="check-results"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+        // Tab switching
+        function switchTab(name) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('panel-' + name).classList.add('active');
+            if (name === 'manga') loadManga();
+        }
+
+        // Toast notifications
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast toast-' + type;
+            toast.textContent = msg;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // API helper
+        async function api(url, options = {}) {
+            try {
+                const res = await fetch(url, {
+                    headers: { 'Content-Type': 'application/json' },
+                    ...options
+                });
+                if (res.status === 204) return null;
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Request failed');
+                return data;
+            } catch (e) {
+                showToast(e.message, 'error');
+                throw e;
+            }
+        }
+
+        // Load manga list
+        async function loadManga() {
+            const container = document.getElementById('manga-list');
+            container.innerHTML = '<div style="text-align:center;padding:20px;"><div class="loading"></div></div>';
+            try {
+                const items = await api('/api/manga');
+                if (!items || items.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">📚</div>
+                            <p>No manga tracked yet.</p>
+                            <p style="margin-top:8px;">Go to <strong>Add Manga</strong> to start tracking.</p>
+                        </div>`;
+                    document.getElementById('stat-total').textContent = '0';
+                    document.getElementById('stat-kiryuu').textContent = '0';
+                    document.getElementById('stat-mangaplus').textContent = '0';
+                    return;
+                }
+
+                // Update stats
+                document.getElementById('stat-total').textContent = items.length;
+                document.getElementById('stat-kiryuu').textContent = items.filter(m => m.Source === 'kiryuu').length;
+                document.getElementById('stat-mangaplus').textContent = items.filter(m => m.Source === 'mangaplus').length;
+
+                let html = `<table>
+                    <thead><tr>
+                        <th>ID</th><th>Source</th><th>Title</th><th>Last Chapter</th><th>Last Checked</th><th>Actions</th>
+                    </tr></thead><tbody>`;
+                for (const m of items) {
+                    const badgeClass = m.Source === 'kiryuu' ? 'badge-kiryuu' : 'badge-mangaplus';
+                    const lastChecked = m.LastChecked ? new Date(m.LastChecked).toLocaleString() : '-';
+                    html += `<tr>
+                        <td>${m.ID}</td>
+                        <td><span class="badge ${badgeClass}">${m.Source}</span></td>
+                        <td><a href="${m.URL}" target="_blank" class="link">${m.Title}</a></td>
+                        <td>${m.LastChapter || '-'}</td>
+                        <td>${lastChecked}</td>
+                        <td class="actions-cell">
+                            <button class="btn btn-secondary btn-sm" onclick="checkOne(${m.ID})">Check</button>
+                            <button class="btn btn-danger btn-sm" onclick="removeManga(${m.ID}, '${m.Title.replace(/'/g, "\\'")}')">Remove</button>
+                        </td>
+                    </tr>`;
+                }
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch (e) {
+                container.innerHTML = '<div class="empty-state"><p>Failed to load manga list.</p></div>';
+            }
+        }
+
+        // Search manga
+        async function doSearch() {
+            const source = document.getElementById('search-source').value;
+            const query = document.getElementById('search-query').value.trim();
+            if (!query) { showToast('Please enter a search query', 'error'); return; }
+
+            const container = document.getElementById('search-results');
+            container.innerHTML = '<div style="text-align:center;padding:20px;"><div class="loading"></div></div>';
+
+            try {
+                const results = await api(`/api/manga/search?source=${encodeURIComponent(source)}&query=${encodeURIComponent(query)}`);
+                if (!results || results.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><p>No results found.</p></div>';
+                    return;
+                }
+                let html = '';
+                for (const r of results) {
+                    html += `<div class="search-result-item">
+                        <div>
+                            <div class="title">${r.Title}</div>
+                            <div class="url">${r.URL}</div>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="quickAdd('${source}', '${r.Title.replace(/'/g, "\\'")}', '${r.URL.replace(/'/g, "\\'")}', '${(r.ID || '').replace(/'/g, "\\'")}')">Add</button>
+                    </div>`;
+                }
+                container.innerHTML = html;
+            } catch (e) {
+                container.innerHTML = '<div class="empty-state"><p>Search failed.</p></div>';
+            }
+        }
+
+        // Quick add from search results
+        async function quickAdd(source, title, url, sourceId) {
+            try {
+                await api('/api/manga', {
+                    method: 'POST',
+                    body: JSON.stringify({ source, title, url, source_id: sourceId })
+                });
+                showToast(`Added "${title}"`, 'success');
+                loadManga();
+            } catch (e) {}
+        }
+
+        // Add manga
+        async function doAdd() {
+            const source = document.getElementById('add-source').value;
+            const title = document.getElementById('add-title').value.trim();
+            const url = document.getElementById('add-url').value.trim();
+            const sourceId = document.getElementById('add-id').value.trim();
+
+            if (!title) { showToast('Title is required', 'error'); return; }
+            if (source === 'kiryuu' && !url) { showToast('URL is required for Kiryuu', 'error'); return; }
+            if (source === 'mangaplus' && !sourceId) { showToast('Title ID is required for MangaPlus', 'error'); return; }
+
+            const btn = document.getElementById('btn-add');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loading"></div> Adding...';
+
+            try {
+                const body = { source, title };
+                if (source === 'kiryuu') {
+                    body.url = url;
+                    body.source_id = sourceId || '';
+                } else {
+                    body.url = `https://mangaplus.shueisha.co.jp/titles/${sourceId}`;
+                    body.source_id = sourceId;
+                }
+                await api('/api/manga', { method: 'POST', body: JSON.stringify(body) });
+                showToast(`Added "${title}"`, 'success');
+                document.getElementById('add-title').value = '';
+                document.getElementById('add-url').value = '';
+                document.getElementById('add-id').value = '';
+                loadManga();
+            } catch (e) {} finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Add Manga';
+            }
+        }
+
+        // Update add form based on source
+        function updateAddForm() {
+            const source = document.getElementById('add-source').value;
+            document.getElementById('add-url-group').style.display = source === 'kiryuu' ? 'block' : 'none';
+            document.getElementById('add-id-group').style.display = source === 'mangaplus' ? 'block' : 'none';
+        }
+
+        // Remove manga
+        async function removeManga(id, title) {
+            if (!confirm(`Remove "${title}" from tracking?`)) return;
+            try {
+                await api(`/api/manga/${id}`, { method: 'DELETE' });
+                showToast(`Removed "${title}"`, 'success');
+                loadManga();
+            } catch (e) {}
+        }
+
+        // Check single manga
+        async function checkOne(id) {
+            try {
+                const result = await api(`/api/manga/${id}`, { method: 'POST' });
+                if (result.NewChapter) {
+                    showToast(`New chapter: ${result.NewChapter} for "${result.Title}"`, 'success');
+                } else if (result.Error) {
+                    showToast(`Error checking "${result.Title}": ${result.Error}`, 'error');
+                } else {
+                    showToast(`No new chapter for "${result.Title}"`, 'info');
+                }
+                loadManga();
+            } catch (e) {}
+        }
+
+        // Check all manga
+        async function doCheckAll() {
+            const btn = document.getElementById('btn-check-all');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loading"></div> Checking...';
+
+            const container = document.getElementById('check-results');
+            container.innerHTML = '<div style="text-align:center;padding:20px;"><div class="loading"></div><p style="margin-top:8px;color:#888;">Checking all manga...</p></div>';
+
+            try {
+                const results = await api('/api/manga/check-all', { method: 'POST' });
+                if (!results || results.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><p>No manga to check.</p></div>';
+                    return;
+                }
+
+                let html = '';
+                for (const r of results) {
+                    let icon = '✅';
+                    let detail = 'No new chapter';
+                    let badgeClass = 'badge-ok';
+                    if (r.Error) {
+                        icon = '❌';
+                        detail = r.Error;
+                        badgeClass = 'badge-error';
+                    } else if (r.NewChapter) {
+                        icon = '🆕';
+                        detail = `New chapter: ${r.NewChapter}`;
+                        badgeClass = 'badge-new';
+                    }
+                    html += `<div class="check-result-item">
+                        <div class="status-icon">${icon}</div>
+                        <div class="info">
+                            <div class="title">${r.Title} <span class="badge ${badgeClass}">${r.Source}</span></div>
+                            <div class="detail">${detail}</div>
+                        </div>
+                    </div>`;
+                }
+                container.innerHTML = html;
+                loadManga();
+            } catch (e) {
+                container.innerHTML = '<div class="empty-state"><p>Check failed.</p></div>';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🔄 Check All';
+            }
+        }
+
+        // Initialize
+        loadManga();
+    </script>
+</body>
+</html>

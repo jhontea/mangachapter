@@ -1,0 +1,23 @@
+[
+  {
+    "id": 260,
+    "title": {"rendered": "One Piece"},
+    "link": "https://v6.kiryuu.to/manga/one-piece/",
+    "slug": "one-piece",
+    "modified": "2026-06-12T08:27:30"
+  },
+  {
+    "id": 12345,
+    "title": {"rendered": "One Punch Man"},
+    "link": "https://v6.kiryuu.to/manga/one-punch-man/",
+    "slug": "one-punch-man",
+    "modified": "2026-06-10T10:00:00"
+  },
+  {
+    "id": 67890,
+    "title": {"rendered": "One Shot"},
+    "link": "https://v6.kiryuu.to/manga/oneshot/",
+    "slug": "oneshot",
+    "modified": "2026-06-08T12:00:00"
+  }
+]

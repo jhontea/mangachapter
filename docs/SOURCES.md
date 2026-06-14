@@ -11,65 +11,52 @@ Detail teknis untuk mengintegrasikan Kiryuu dan Manga Plus.
 | Property | Value |
 |----------|-------|
 | Base URL | `https://v6.kiryuu.to` |
-| Method | HTML scraping |
-| Library | `github.com/PuerkitoBio/goquery` |
+| Method | WordPress REST API |
+| Library | Standard library only (`net/http`, `encoding/json`) |
 | Auth | None |
 | Rate limit | 1-2 detik antar request (configurable) |
+
+> **Catatan:** Domain Kiryuu sering berganti (kiryuu.org, v6.kiryuu.to, dll.). Simpan full URL di DB; base URL dari config.
 
 ### URL Patterns
 
 | Action | URL Pattern | Contoh |
 |--------|-------------|--------|
 | Home | `/` | |
-| Search | `/?s={query}` | `/?s=one+piece` |
 | Manga detail | `/manga/{slug}/` | `/manga/one-piece/` |
-| Chapter | `/manga/{slug}/{chapter-slug}/` | `/manga/one-piece/chapter-123/` |
-
-> **Catatan:** Domain Kiryuu sering berganti (kiryuu.org, v6.kiryuu.to, dll.). Simpan full URL di DB; base URL dari config.
+| Chapter (new) | `/?chapter={slug}-chapter-{N}` | `/?chapter=one-piece-chapter-1120` |
+| Chapter (old) | `/manga/{slug}/chapter-{N}/` | `/manga/one-piece/chapter-123/` |
+| Search API | `/wp-json/wp/v2/manga?search={query}` | |
+| Chapter API | `/wp-json/wp/v2/chapter?search={term}&per_page=50` | |
 
 ### Implementasi Search
 
+Menggunakan WordPress REST API:
+
 ```
-GET {base_url}/?s={url.QueryEscape(query)}
-Headers:
-  User-Agent: {config.sources.kiryuu.user_agent}
-  Accept-Language: id-ID,id;q=0.9,en;q=0.8
-```
-
-**Parsing (placeholder — INSPECT SAAT IMPLEMENTASI):**
-
-Selector perlu diverifikasi dengan inspect HTML aktual. Pola umum situs manga WordPress theme:
-
-```go
-// Contoh selector — GANTI setelah inspect
-doc.Find(".bsx a").Each(func(i int, s *goquery.Selection) {
-    title := strings.TrimSpace(s.Find(".tt").Text())
-    href, _ := s.Attr("href")
-    // extract slug from href
-})
+GET /wp-json/wp/v2/manga?search={url.QueryEscape(query)}&per_page=20
 ```
 
-**TODO saat Fase 2:**
-1. Fetch `/?s=one+piece`
-2. Simpan HTML sample ke `testdata/kiryuu_search.html`
-3. Tentukan selector final
-4. Update section ini
+Response: JSON array of manga objects with `title.rendered`, `link`, `slug`.
 
 ### Implementasi GetLatestChapter
 
-```
-GET {manga_url}
-Parse chapter list → ambil entry pertama (terbaru)
-```
+Tema baru Kiryuu hanya render "First Chapter" di HTML; sisanya dimuat via HTMX AJAX.
+Kita skip HTML parsing dan gunakan REST API secara langsung:
+
+1. Extract slug dari manga URL (`/manga/{slug}/`)
+2. Search chapters: `GET /wp-json/wp/v2/chapter?search={slug_words}&per_page=50&orderby=date&order=desc`
+3. Filter hasil by slug prefix (hanya ambil chapter yang slug-nya dimulai dengan `{manga-slug}-`)
+4. Ambil chapter dengan `NumValue` tertinggi
 
 **Expected output:**
 
 ```go
 ChapterInfo{
-    Number:   "Chapter 123",
-    Title:    "", // jika ada subtitle
-    URL:      "https://v6.kiryuu.to/manga/one-piece/chapter-123/",
-    NumValue: 123,
+    Number:   "Chapter 446",
+    Title:    "",
+    URL:      "https://v6.kiryuu.to/?chapter=mairimashita-iruma-kun-chapter-446",
+    NumValue: 446,
 }
 ```
 
@@ -77,17 +64,18 @@ ChapterInfo{
 
 ```go
 // Input examples → NumValue
-"Chapter 123"     → 123
-"Ch. 123"         → 123
-"123"             → 123
-"Chapter 123.5"   → 123.5
-"Chapter 123 - Special" → 123 (strip suffix) atau 0 + string compare
+"Chapter 123"              → 123
+"Ch. 123"                  → 123
+"123"                      → 123
+"Chapter 123.5"            → 123.5
+"Manga Name Chapter 446"   → 446
+"chapter-446"              → 446
 ```
 
-Regex suggestion:
+Regex:
 
 ```go
-re := regexp.MustCompile(`(?i)(?:chapter|ch\.?)\s*(\d+(?:\.\d+)?)|^(\d+(?:\.\d+)?)$`)
+re := regexp.MustCompile(`(?i)(?:chapter|ch\.?)\s*[#]?(\d+(?:\.\d+)?)|^(\d+(?:\.\d+)?)$`)
 ```
 
 ### Error Cases
@@ -97,12 +85,8 @@ re := regexp.MustCompile(`(?i)(?:chapter|ch\.?)\s*(\d+(?:\.\d+)?)|^(\d+(?:\.\d+)
 | 404 | Return error "manga not found" |
 | Cloudflare challenge | Log error; mungkin perlu cookie/header tambahan |
 | Empty chapter list | Return error "no chapters found" |
-| HTML structure changed | Log + return parse error |
-
-### Referensi
-
-- Node.js scraper: `@boboiboyturuu_nih/kiryuu-scraper` (npm) — lihat selector yang dipakai
-- Domain lama: `kiryuu.org` — struktur mungkin mirip
+| REST API unavailable | Return error dengan pesan jelas |
+| Slug not found in URL | Return error "no chapters found on page" |
 
 ---
 
@@ -249,7 +233,6 @@ internal/source/
   kiryuu_test.go
   mangaplus_test.go
 testdata/
-  kiryuu_search.html
-  kiryuu_manga_detail.html
+  kiryuu_search.json
+  kiryuu_chapter.json
   mangaplus_title_detail.json
-```

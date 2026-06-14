@@ -9,7 +9,7 @@ Aplikasi Go untuk memantau chapter manga baru dari beberapa sumber web, lalu men
 - Pengecekan otomatis berkala (default: setiap 1 jam)
 - Notifikasi email saat chapter baru terdeteksi
 - Dua sumber awal:
-  - [Kiryuu](https://v6.kiryuu.to/) — HTML scraping
+  - [Kiryuu](https://v6.kiryuu.to/) — WordPress REST API
   - [Manga Plus](https://mangaplus.shueisha.co.jp/updates) — unofficial API
 
 ## Status Proyek
@@ -24,38 +24,95 @@ Aplikasi Go untuk memantau chapter manga baru dari beberapa sumber web, lalu men
 
 Detail implementasi: [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md)
 
-## Quick Start (setelah implementasi)
+## Quick Start
+
+### Persyaratan
+
+- Go 1.22+
+- SMTP server (Gmail App Password, Outlook, atau SMTP custom) — opsional
+- Koneksi internet untuk scraping/API
+
+### 1. Setup Konfigurasi
 
 ```bash
-# Clone / masuk ke direktori proyek
-cd mangachapter
-
-# Salin dan edit konfigurasi
 cp config.yaml.example config.yaml
-# Edit SMTP, interval scheduler, dll.
+# Edit config.yaml sesuai kebutuhan (SMTP, dll.)
+```
 
-# Build
+### 2. Build
+
+```bash
 go build -o manga ./cmd/manga
+```
 
-# Tambah manga
-./manga add kiryuu "One Piece" --url https://v6.kiryuu.to/manga/one-piece/
-./manga add mangaplus "Jujutsu Kaisen" --id 100026
+### 3. Jalankan CLI (Backend)
 
-# Lihat daftar
+```bash
+# Lihat daftar manga
 ./manga list
 
-# Cek manual
-./manga check
+# Cari manga dari sumber
+./manga search kiryuu "one piece"
+./manga search mangaplus "dandadan"
 
-# Jalankan scheduler
+# Tambah manga ke watchlist
+./manga add kiryuu "One Piece" --url https://v6.kiryuu.to/manga/one-piece/
+./manga add mangaplus "Dandadan" --id 400007
+
+# Cek update manual
+./manga check
+./manga check --id 1        # cek satu manga spesifik
+
+# Jalankan scheduler (berjalan terus, cek setiap 1 jam)
 ./manga run
 ```
 
-## Struktur Proyek (target)
+### 4. Jalankan Web UI (Frontend + API)
+
+Web server menyajikan **frontend** sekaligus **REST API** dalam satu proses:
+
+```bash
+go run ./cmd/web/
+```
+
+Kemudian buka browser: **http://localhost:8080**
+
+Web UI menyediakan:
+- 📖 **My Manga** — daftar manga yang dilacak
+- 🔍 **Search** — cari manga dari Kiryuu / MangaPlus
+- ➕ **Add Manga** — tambah manga ke watchlist
+- 🔄 **Check Updates** — cek update manual dari browser
+
+Web API endpoints (REST):
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| GET | `/api/manga` | List semua manga |
+| POST | `/api/manga` | Tambah manga baru |
+| GET | `/api/manga/{id}` | Detail manga |
+| DELETE | `/api/manga/{id}` | Hapus manga |
+| POST | `/api/manga/check-all` | Cek semua update |
+| GET | `/api/manga/search?source=...&query=...` | Cari manga |
+| GET | `/api/sources` | Daftar sumber tersedia |
+
+### 5. Environment Variables
+
+| Variable | Deskripsi |
+|----------|-----------|
+| `MANGA_SMTP_PASSWORD` | Password SMTP (jangan simpan di config.yaml) |
+| `MANGA_SMTP_USERNAME` | Username SMTP override |
+| `MANGA_DB_PATH` | Path database SQLite |
+| `MANGA_LOG_LEVEL` | Log level (debug, info, warn, error) |
+| `PORT` | Port web server (default: 8080) |
+
+## Struktur Proyek
 
 ```
 mangachapter/
-├── cmd/manga/           # Entry point CLI
+├── cmd/
+│   ├── manga/           # CLI entry point
+│   └── web/             # Web server (API + frontend)
+├── web/
+│   └── index.html       # Frontend single-page app
 ├── internal/
 │   ├── config/          # Load YAML + env
 │   ├── storage/         # SQLite repository
