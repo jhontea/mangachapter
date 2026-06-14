@@ -1,0 +1,8 @@
+# Wrangler cache
+.wrangler/
+
+# Node modules
+node_modules/
+
+# Environment
+.env

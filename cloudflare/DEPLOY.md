@@ -4,21 +4,21 @@
 
 ```
 Cloudflare Pages (mangachapterweb.pages.dev)
-├── public/index.html          # Web UI (static)
-└── functions/                 # API endpoints (Pages Functions)
-    ├── api/
-    │   ├── sources.js         # GET /api/sources
-    │   └── manga/
-    │       ├── index.js       # GET/POST /api/manga
-    │       ├── [id].js        # GET/POST/DELETE /api/manga/:id
-    │       ├── search.js      # GET /api/manga/search
-    │       └── check-all.js   # POST /api/manga/check-all
++-- public/index.html          # Web UI (static)
++-- functions/                 # API endpoints (Pages Functions)
+    +-- api/
+        +-- sources.js         # GET /api/sources
+        +-- manga/
+            +-- index.js       # GET/POST /api/manga
+            +-- [id].js        # GET/POST/DELETE /api/manga/:id
+            +-- search.js      # GET /api/manga/search
+            +-- check-all.js   # POST /api/manga/check-all
+
+Cloudflare Worker (mangachapter-scheduler)
++-- Cron: setiap jam, cek update + kirim Telegram
 
 Cloudflare D1 (mangachapter-db)
-└── tracked_manga, notifications tables
-
-Cloudflare Worker Terpisah (Scheduler)
-└── Cron: setiap jam, cek update + kirim Telegram
++-- tracked_manga, notifications tables
 ```
 
 ## Prasyarat
@@ -42,14 +42,9 @@ npx wrangler login
 npx wrangler d1 create mangachapter-db
 ```
 
-Output akan memberikan `database_id`. Copy ID tersebut ke `wrangler.toml`:
-
-```toml
-[[d1_databases]]
-binding = "DB"
-database_name = "mangachapter-db"
-database_id = "PASTE_DATABASE_ID_DISINI"
-```
+Output akan memberikan `database_id`. Copy ID tersebut ke:
+- `wrangler.toml` (untuk Pages)
+- `scheduler-wrangler.toml` (untuk Scheduler Worker)
 
 ### 3. Jalankan Migrasi Database
 
@@ -57,15 +52,7 @@ database_id = "PASTE_DATABASE_ID_DISINI"
 npx wrangler d1 execute mangachapter-db --file=./migrations/0001_init.sql
 ```
 
-### 4. Set Secrets (Telegram)
-
-```bash
-# Untuk Pages Functions
-npx wrangler pages secret put TELEGRAM_TOKEN
-npx wrangler pages secret put TELEGRAM_CHAT_ID
-```
-
-### 5. Deploy Web UI + API (Pages)
+### 4. Deploy Web UI + API (Pages)
 
 ```bash
 npx wrangler pages deploy ./public
@@ -79,13 +66,25 @@ Atau connect ke GitHub repo untuk auto-deploy:
    - Build output directory: `cloudflare/public`
    - Root directory: `cloudflare/`
 
-### 6. Deploy Scheduler (Worker Terpisah)
-
-Scheduler berjalan sebagai Worker terpisah dengan cron trigger:
+### 5. Set Secrets untuk Pages
 
 ```bash
-# Buat file scheduler-worker.js terpisah
-npx wrangler deploy src/scheduler.js --name mangachapter-scheduler
+cd cloudflare
+npx wrangler pages secret put TELEGRAM_TOKEN
+npx wrangler pages secret put TELEGRAM_CHAT_ID
+```
+
+### 6. Deploy Scheduler Worker (Cron)
+
+```bash
+npx wrangler deploy src/scheduler.js --name mangachapter-scheduler --config scheduler-wrangler.toml
+```
+
+### 7. Set Secrets untuk Scheduler Worker
+
+```bash
+npx wrangler secret put TELEGRAM_TOKEN --name mangachapter-scheduler --config scheduler-wrangler.toml
+npx wrangler secret put TELEGRAM_CHAT_ID --name mangachapter-scheduler --config scheduler-wrangler.toml
 ```
 
 ## API Endpoints
@@ -120,11 +119,11 @@ curl -X POST https://mangachapterweb.pages.dev/api/manga/check-all
 
 ### Error: "Unexpected token '<', not valid JSON"
 API request mengembalikan HTML alih-alih JSON. Pastikan:
-1. File functions ada di folder yang benar
+1. File functions ada di folder `cloudflare/functions/`
 2. Deploy ulang: `npx wrangler pages deploy ./public`
 
 ### Error: "TELEGRAM_TOKEN not found"
-Pastikan sudah set secrets:
+Pastikan sudah set secrets untuk Pages:
 ```bash
 npx wrangler pages secret put TELEGRAM_TOKEN
 ```
@@ -137,4 +136,5 @@ Pastikan `database_id` di `wrangler.toml` sudah benar.
 Semua layanan **gratis**:
 - Pages: Unlimited bandwidth
 - Functions: 100,000 request/hari
+- Worker: 100,000 request/hari
 - D1: 5GB storage
