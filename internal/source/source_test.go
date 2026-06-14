@@ -41,10 +41,15 @@ func TestExtractSlugFromURL(t *testing.T) {
 		input string
 		want  string
 	}{
+		// Standard Kiryuu URLs
 		{"https://v6.kiryuu.to/manga/one-piece/", "one-piece"},
 		{"https://v6.kiryuu.to/manga/one-piece", "one-piece"},
 		{"https://v6.kiryuu.to/manga/jujutsu-kaisen/", "jujutsu-kaisen"},
+		// Old domain — slug extraction still works
+		{"https://old-domain.example.com/manga/mairimashita-iruma-kun/", "mairimashita-iruma-kun"},
+		// Any domain with /manga/ path
 		{"https://example.com/manga/just-a-slug/", "just-a-slug"},
+		// No /manga/ path — returns empty
 		{"https://example.com/no-manga-path/", ""},
 		{"", ""},
 	}

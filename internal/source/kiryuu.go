@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -27,11 +26,11 @@ func NewKiryuu(baseURL, userAgent string, client *HTTPClient) *Kiryuu {
 
 // kiryuuManga represents a manga from the WordPress REST API.
 type kiryuuManga struct {
-	ID       int              `json:"id"`
-	Title    kiryuuTitle      `json:"title"`
-	Link     string           `json:"link"`
-	Slug     string           `json:"slug"`
-	Modified string           `json:"modified"`
+	ID       int         `json:"id"`
+	Title    kiryuuTitle `json:"title"`
+	Link     string      `json:"link"`
+	Slug     string      `json:"slug"`
+	Modified string      `json:"modified"`
 }
 
 type kiryuuTitle struct {
@@ -80,45 +79,52 @@ func (k *Kiryuu) Search(ctx context.Context, query string) ([]SearchResult, erro
 	return results, nil
 }
 
-// GetLatestChapter fetches the latest chapter for a manga by parsing the manga page HTML.
+// GetLatestChapter fetches the latest chapter for a manga.
+// mangaURL is the full URL stored in DB (e.g. https://v6.kiryuu.to/manga/one-piece/).
+// We extract the slug from it and use the configured baseURL for all API calls.
+// This way, if the domain changes, only the config needs updating.
 func (k *Kiryuu) GetLatestChapter(ctx context.Context, mangaURL string) (*ChapterInfo, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, mangaURL, nil)
+	// Extract slug from the stored URL
+	slug := extractSlugFromURL(mangaURL)
+	if slug == "" {
+		return nil, fmt.Errorf("could not extract manga slug from URL: %s", mangaURL)
+	}
+
+	// Verify manga exists by hitting the manga page on the current baseURL
+	mangaPageURL := fmt.Sprintf("%s/manga/%s/", k.baseURL, slug)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, mangaPageURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("create chapter request: %w", err)
+		return nil, fmt.Errorf("create manga page request: %w", err)
 	}
 	req.Header.Set("Accept-Language", "id-ID,id;q=0.9,en;q=0.8")
 
 	resp, err := k.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("chapter request: %w", err)
+		return nil, fmt.Errorf("manga page request: %w", err)
 	}
-	defer resp.Body.Close()
+	resp.Body.Close()
 
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, fmt.Errorf("manga not found: %s", slug)
+	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("chapter page: HTTP %d", resp.StatusCode)
+		return nil, fmt.Errorf("manga page: HTTP %d", resp.StatusCode)
 	}
 
-	return k.parseLatestChapter(resp.Body, mangaURL)
-}
-
-// parseLatestChapter extracts the manga slug from the URL and fetches the latest chapter via REST API.
-// The new Kiryuu theme only renders "First Chapter" in the HTML; all other chapters are loaded via HTMX AJAX.
-// We skip HTML parsing entirely and use the WordPress REST API with slug-based filtering.
-func (k *Kiryuu) parseLatestChapter(body io.Reader, mangaURL string) (*ChapterInfo, error) {
-	mangaSlug := extractSlugFromURL(mangaURL)
-	if mangaSlug != "" {
-		return k.getLatestChapterFromRESTAPI(context.Background(), mangaSlug, mangaURL)
-	}
-	return nil, fmt.Errorf("no chapters found on page %s", mangaURL)
+	// Fetch latest chapter via REST API using the current baseURL
+	return k.getLatestChapterFromRESTAPI(ctx, slug)
 }
 
 // extractSlugFromURL extracts the manga slug from a Kiryuu manga URL.
+// Supports formats:
+//   - https://v6.kiryuu.to/manga/one-piece/
+//   - https://v6.kiryuu.to/manga/one-piece
+//   - /manga/one-piece/
 func extractSlugFromURL(mangaURL string) string {
 	parsed, err := url.Parse(mangaURL)
 	if err != nil {
 		return ""
 	}
-	// URL format: /manga/{slug}/
 	parts := strings.Split(strings.Trim(parsed.Path, "/"), "/")
 	for i, part := range parts {
 		if part == "manga" && i+1 < len(parts) {
@@ -130,7 +136,7 @@ func extractSlugFromURL(mangaURL string) string {
 
 // getLatestChapterFromRESTAPI fetches the latest chapter using the WordPress REST API.
 // The REST API doesn't support parent filtering, so we search broadly and filter by slug pattern.
-func (k *Kiryuu) getLatestChapterFromRESTAPI(ctx context.Context, mangaSlug, mangaURL string) (*ChapterInfo, error) {
+func (k *Kiryuu) getLatestChapterFromRESTAPI(ctx context.Context, mangaSlug string) (*ChapterInfo, error) {
 	// Extract a short search term from the slug (first 2-3 words)
 	searchTerm := extractSearchTerm(mangaSlug)
 
@@ -194,7 +200,6 @@ func (k *Kiryuu) getLatestChapterFromRESTAPI(ctx context.Context, mangaSlug, man
 
 // extractSearchTerm extracts a short search term from a manga slug.
 func extractSearchTerm(slug string) string {
-	// Take first 2-3 meaningful words from the slug
 	parts := strings.Split(slug, "-")
 	if len(parts) >= 3 {
 		return strings.Join(parts[:3], " ")
@@ -208,7 +213,6 @@ func parseChapterFromLink(href, text string) (*ChapterInfo, error) {
 		return nil, fmt.Errorf("empty chapter link or text")
 	}
 
-	// Clean up href
 	href = strings.TrimSpace(href)
 
 	// Try to extract chapter number from text first
@@ -229,7 +233,6 @@ func parseChapterFromLink(href, text string) (*ChapterInfo, error) {
 				if slug == "" {
 					slug = parsed.Path
 				}
-				// Look for -chapter-N pattern in slug
 				if idx := strings.Index(slug, "-chapter-"); idx >= 0 {
 					numValue, cleanTitle = ParseChapterNumber(slug[idx+1:])
 				}

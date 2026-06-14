@@ -42,12 +42,20 @@ Response: JSON array of manga objects with `title.rendered`, `link`, `slug`.
 ### Implementasi GetLatestChapter
 
 Tema baru Kiryuu hanya render "First Chapter" di HTML; sisanya dimuat via HTMX AJAX.
-Kita skip HTML parsing dan gunakan REST API secara langsung:
+Kita skip HTML parsing dan gunakan REST API secara langsung.
 
-1. Extract slug dari manga URL (`/manga/{slug}/`)
-2. Search chapters: `GET /wp-json/wp/v2/chapter?search={slug_words}&per_page=50&orderby=date&order=desc`
-3. Filter hasil by slug prefix (hanya ambil chapter yang slug-nya dimulai dengan `{manga-slug}-`)
-4. Ambil chapter dengan `NumValue` tertinggi
+**Desain URL-agnostic:**
+- Saat user menambah manga, full URL disimpan di DB (misal `https://v6.kiryuu.to/manga/one-piece/`)
+- Saat `GetLatestChapter`, kita **extract slug** dari URL tersebut
+- Semua request REST API menggunakan **`baseURL` dari config**, bukan dari URL di DB
+- Jika domain Kiryuu berubah, user cukup update `sources.kiryuu.base_url` di `config.yaml`
+
+**Flow:**
+1. Extract slug dari manga URL di DB (`/manga/{slug}/` → `one-piece`)
+2. Validasi manga exists: `GET {baseURL}/manga/{slug}/` (HTTP 200 = OK)
+3. Search chapters: `GET {baseURL}/wp-json/wp/v2/chapter?search={slug_words}&per_page=50&orderby=date&order=desc`
+4. Filter hasil by slug prefix (hanya ambil chapter yang slug-nya dimulai dengan `{manga-slug}-`)
+5. Ambil chapter dengan `NumValue` tertinggi
 
 **Expected output:**
 
