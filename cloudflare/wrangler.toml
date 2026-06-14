@@ -1,24 +1,16 @@
 # Wrangler configuration for Manga Chapter Notifier
-# Dokumentasi: https://developers.cloudflare.com/workers/wrangler/configuration/
+# Cloudflare Pages + Functions + D1
 
-name = "mangachapter"
-main = "src/api.js"
+name = "mangachapterweb"
 compatibility_date = "2024-01-01"
 
 # D1 Database binding
 [[d1_databases]]
 binding = "DB"
 database_name = "mangachapter-db"
-database_id = "GANTI_DENGAN_DATABASE_ID_KAMU"
+database_id = "76305911-a6dc-4caa-84c9-86f5d5071107"
 
 # Environment variables (non-secret)
 [vars]
 APP_NAME = "Manga Chapter Notifier"
 APP_VERSION = "1.0.0"
-
-# Cron Triggers untuk scheduler
-[triggers]
-crons = ["0 * * * *"]  # Setiap jam
-
-# Pages configuration (untuk deploy web UI)
-# Jalankan: wrangler pages deploy ./public
