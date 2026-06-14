@@ -1,0 +1,18 @@
+{
+  "name": "mangachapter-cloudflare",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Manga Chapter Notifier - Cloudflare Workers + D1 + Pages",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create mangachapter-db",
+    "db:migrate": "wrangler d1 execute mangachapter-db --file=./migrations/0001_init.sql",
+    "db:migrate:local": "wrangler d1 execute mangachapter-db --local --file=./migrations/0001_init.sql",
+    "pages:dev": "wrangler pages dev ./public",
+    "pages:deploy": "wrangler pages deploy ./public"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

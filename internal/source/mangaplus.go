@@ -291,7 +291,7 @@ func chapterFromMangaPlusV2(ch mangaPlusChapter) *ChapterInfo {
 	numValue, cleanTitle := ParseChapterNumber(ch.Name)
 	info := &ChapterInfo{
 		Number:   cleanTitle,
-		URL:      fmt.Sprintf("https://mangaplus.shueisha.co.jp/chapters/%d", ch.ChapterID),
+		URL:      fmt.Sprintf("https://mangaplus.shueisha.co.jp/viewer/%d", ch.ChapterID),
 		NumValue: numValue,
 	}
 	if ch.SubTitle != nil {
