@@ -5,8 +5,15 @@ scheduler:
   interval: "1h"
   # cron: "0 * * * *"   # uncomment untuk pakai cron (override interval)
 
+# Notifier: pilih salah satu (telegram direkomendasikan)
+# Telegram: buat bot via @BotFather, dapatkan token + chat_id
+telegram:
+  enabled: false
+  token: ""       # gunakan env MANGA_TELEGRAM_TOKEN
+  chat_id: ""     # gunakan env MANGA_TELEGRAM_CHAT_ID
+
 email:
-  enabled: true
+  enabled: false
   smtp_host: "smtp.gmail.com"
   smtp_port: 587
   username: "your@gmail.com"

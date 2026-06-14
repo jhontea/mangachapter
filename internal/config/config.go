@@ -23,6 +23,7 @@ const (
 type Config struct {
 	Scheduler SchedulerConfig `yaml:"scheduler"`
 	Email     EmailConfig     `yaml:"email"`
+	Telegram  TelegramConfig  `yaml:"telegram"`
 	Storage   StorageConfig   `yaml:"storage"`
 	Sources   SourcesConfig   `yaml:"sources"`
 	Log       LogConfig       `yaml:"log"`
@@ -41,6 +42,12 @@ type EmailConfig struct {
 	Password string   `yaml:"password"`
 	From     string   `yaml:"from"`
 	To       []string `yaml:"to"`
+}
+
+type TelegramConfig struct {
+	Enabled bool   `yaml:"enabled"`
+	Token   string `yaml:"token"`
+	ChatID  string `yaml:"chat_id"`
 }
 
 type StorageConfig struct {
@@ -97,6 +104,7 @@ func defaultConfig() *Config {
 	return &Config{
 		Scheduler: SchedulerConfig{Interval: defaultInterval},
 		Email:     EmailConfig{Enabled: true, SMTPPort: 587},
+		Telegram:  TelegramConfig{Enabled: false},
 		Storage:   StorageConfig{Path: defaultDBPath},
 		Sources: SourcesConfig{
 			Kiryuu: KiryuuConfig{
@@ -119,6 +127,12 @@ func (c *Config) applyEnvOverrides() {
 	}
 	if v := os.Getenv("MANGA_SMTP_USERNAME"); v != "" {
 		c.Email.Username = v
+	}
+	if v := os.Getenv("MANGA_TELEGRAM_TOKEN"); v != "" {
+		c.Telegram.Token = v
+	}
+	if v := os.Getenv("MANGA_TELEGRAM_CHAT_ID"); v != "" {
+		c.Telegram.ChatID = v
 	}
 	if v := os.Getenv("MANGA_DB_PATH"); v != "" {
 		c.Storage.Path = v
@@ -155,6 +169,15 @@ func (c *Config) validate() error {
 		}
 		if len(c.Email.To) == 0 {
 			return fmt.Errorf("email.to is required when email is enabled")
+		}
+	}
+
+	if c.Telegram.Enabled {
+		if c.Telegram.Token == "" {
+			return fmt.Errorf("telegram.token is required when telegram is enabled")
+		}
+		if c.Telegram.ChatID == "" {
+			return fmt.Errorf("telegram.chat_id is required when telegram is enabled")
 		}
 	}
 

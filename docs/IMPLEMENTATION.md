@@ -161,7 +161,8 @@ go build ./cmd/manga
 
 - [x] Web UI (cmd/web + web/index.html)
 - [x] Parallel checker dengan rate limit (errgroup)
-- [ ] Discord/Telegram webhook notifier
+- [x] Telegram notifier (internal/notifier/telegram.go)
+- [ ] Discord webhook notifier
 - [ ] Docker + docker-compose
 - [ ] Windows service wrapper
 - [ ] Source tambahan (MangaDex, dll.)
@@ -181,8 +182,9 @@ go build ./cmd/manga
 8. internal/source/mangaplus.go
 9. internal/checker/checker.go
 10. internal/notifier/email.go
-11. internal/scheduler/scheduler.go
-12. cmd/manga/commands/*.go (optional split)
+11. internal/notifier/telegram.go
+12. internal/scheduler/scheduler.go
+13. cmd/manga/commands/*.go (optional split)
 ```
 
 ---

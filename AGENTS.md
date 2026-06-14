@@ -15,7 +15,7 @@ Instruksi untuk melanjutkan development proyek **Manga Chapter Notifier**.
 - **Fase 2 (Source Adapters):** selesai — Kiryuu + Manga Plus adapters, CLI add/search
 - **Fase 3 (Checker & Notifier):** selesai — chapter comparison, checker orchestrator, email SMTP notifier, CLI check
 - **Fase 4 (Scheduler & Polish):** selesai — scheduler daemon, graceful shutdown, structured slog
-- **Fase 5 (Opsional):** Web UI selesai, parallel checker selesai; sisanya: webhook notifier, Docker, etc.
+- **Fase 5 (Opsional):** Web UI selesai, parallel checker selesai, Telegram notifier selesai; sisanya: Discord webhook, Docker, etc.
 
 ## Konvensi Kode
 
@@ -43,7 +43,7 @@ internal/config/
 internal/storage/
 internal/source/     # kiryuu.go, mangaplus.go, source.go
 internal/checker/
-internal/notifier/
+internal/notifier/   # email.go, telegram.go
 internal/scheduler/
 ```
 
@@ -91,6 +91,7 @@ github.com/robfig/cron/v3
 modernc.org/sqlite
 github.com/spf13/cobra
 gopkg.in/yaml.v3
+golang.org/x/sync
 ```
 
 ## Jangan
@@ -113,4 +114,3 @@ gopkg.in/yaml.v3
 "Lanjutkan Fase 1 dari docs/IMPLEMENTATION.md"
 "Implement Kiryuu adapter — inspect HTML dulu"
 "Wire manga check command dengan email notifier"
-```

@@ -91,16 +91,24 @@ func (a *app) initSources() {
 }
 
 func (a *app) initNotifier() {
-	if !a.cfg.Email.Enabled {
-		a.notifier = nil
+	// Prefer Telegram if enabled, fall back to email
+	if a.cfg.Telegram.Enabled {
+		a.notifier = notifier.NewTelegram(a.cfg.Telegram.Token, a.cfg.Telegram.ChatID)
+		slog.Info("notifier: telegram enabled")
 		return
 	}
-	a.notifier = notifier.NewEmail(
-		a.cfg.Email.SMTPHost,
-		a.cfg.Email.SMTPPort,
-		a.cfg.Email.Username,
-		a.cfg.Email.Password,
-		a.cfg.Email.From,
-		a.cfg.Email.To,
-	)
+	if a.cfg.Email.Enabled {
+		a.notifier = notifier.NewEmail(
+			a.cfg.Email.SMTPHost,
+			a.cfg.Email.SMTPPort,
+			a.cfg.Email.Username,
+			a.cfg.Email.Password,
+			a.cfg.Email.From,
+			a.cfg.Email.To,
+		)
+		slog.Info("notifier: email enabled")
+		return
+	}
+	a.notifier = nil
+	slog.Warn("notifier: no notifier configured")
 }
