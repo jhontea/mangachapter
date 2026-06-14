@@ -6,6 +6,7 @@
 
 # Config with secrets
 config.yaml
+.env
 
 # Database
 /data/

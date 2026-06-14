@@ -2,9 +2,11 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"time"
 
+	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v3"
 )
 
@@ -75,6 +77,11 @@ type LogConfig struct {
 }
 
 func Load(path string) (*Config, error) {
+	// Load .env file if exists (silently ignore if not found)
+	if err := godotenv.Load(); err != nil {
+		slog.Debug("no .env file found, using system env only", "error", err)
+	}
+
 	if path == "" {
 		path = os.Getenv("MANGA_CONFIG_PATH")
 	}
@@ -127,6 +134,12 @@ func (c *Config) applyEnvOverrides() {
 	}
 	if v := os.Getenv("MANGA_SMTP_USERNAME"); v != "" {
 		c.Email.Username = v
+	}
+	if v := os.Getenv("TELEGRAM_TOKEN"); v != "" {
+		c.Telegram.Token = v
+	}
+	if v := os.Getenv("TELEGRAM_CHAT_ID"); v != "" {
+		c.Telegram.ChatID = v
 	}
 	if v := os.Getenv("MANGA_TELEGRAM_TOKEN"); v != "" {
 		c.Telegram.Token = v
