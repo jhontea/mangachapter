@@ -1,6 +1,9 @@
 /**
  * Manga Plus Source Adapter
  * Mengambil data manga dari Manga Plus API (unofficial)
+ * 
+ * CATATAN: API MangaPlus tidak stabil dan sering berubah.
+ * Search mungkin tidak berfungsi jika API berubah.
  */
 
 const MANGAPLUS_API_BASE = "https://jumpg-api.tokyo-cdn.com/api";
@@ -11,10 +14,9 @@ const SECRET_KEY = "4Kin9vGg";
 let deviceSecret = null;
 
 /**
- * Generate MD5 hash (sederhana untuk device token)
+ * Generate hash untuk device token
  */
-function md5(input) {
-  // Gunakan SubtleCrypto untuk MD5-like hash
+function simpleHash(input) {
   const encoder = new TextEncoder();
   const data = encoder.encode(input);
   return crypto.subtle.digest("SHA-256", data).then((hash) => {
@@ -29,8 +31,8 @@ function md5(input) {
 export async function register() {
   try {
     const timestamp = Date.now().toString();
-    const deviceToken = await md5("manga-notifier-" + timestamp);
-    const securityKey = await md5(deviceToken + SECRET_KEY);
+    const deviceToken = await simpleHash("manga-notifier-" + timestamp);
+    const securityKey = await simpleHash(deviceToken + SECRET_KEY);
 
     const params = new URLSearchParams({
       device_token: deviceToken,
@@ -51,7 +53,9 @@ export async function register() {
     const data = await response.json();
     if (data.success && data.success.registerationData) {
       deviceSecret = data.success.registerationData.deviceSecret;
-      console.log("MangaPlus device registered");
+      console.log("MangaPlus device registered, secret:", deviceSecret);
+    } else {
+      console.warn("MangaPlus register: no secret in response");
     }
   } catch (error) {
     console.warn("MangaPlus register failed: " + error.message);
@@ -62,20 +66,34 @@ export async function register() {
  * Cari manga di Manga Plus
  */
 export async function search(query) {
+  console.log("MangaPlus search: query=" + query);
+  
   const url = buildUrl("title_list/allV2", {});
+  console.log("MangaPlus search URL: " + url);
 
   try {
     const response = await fetch(url, {
       headers: { "User-Agent": "MangaPlusShonenJump/" + APP_VER },
     });
 
+    console.log("MangaPlus search response status: " + response.status);
+
     if (!response.ok) {
-      throw new Error("Search HTTP " + response.status);
+      throw new Error("HTTP " + response.status);
     }
 
     const data = await response.json();
+    console.log("MangaPlus search response:", JSON.stringify(data).substring(0, 300));
+
+    // Check for API error
+    if (data.error) {
+      const errorMsg = data.error.englishPopup ? data.error.englishPopup.body : JSON.stringify(data.error);
+      console.error("MangaPlus API error: " + errorMsg);
+      throw new Error("MangaPlus API error: " + errorMsg);
+    }
+
     if (!data.success || !data.success.allTitlesViewV2) {
-      throw new Error("Tidak ada judul ditemukan");
+      throw new Error("Tidak ada judul ditemukan (API response tidak valid)");
     }
 
     const queryLower = query.toLowerCase();
@@ -93,6 +111,7 @@ export async function search(query) {
       }
     }
 
+    console.log("MangaPlus search results: " + results.length);
     return results;
   } catch (error) {
     console.error("MangaPlus search error: " + error.message);
@@ -109,6 +128,8 @@ export async function getLatestChapter(mangaUrl) {
     throw new Error("URL atau ID manga tidak valid: " + mangaUrl);
   }
 
+  console.log("MangaPlus getLatestChapter: titleId=" + titleId);
+
   const url = buildUrl("title_detailV3", { title_id: titleId });
 
   try {
@@ -117,10 +138,16 @@ export async function getLatestChapter(mangaUrl) {
     });
 
     if (!response.ok) {
-      throw new Error("Detail HTTP " + response.status);
+      throw new Error("HTTP " + response.status);
     }
 
     const data = await response.json();
+    
+    if (data.error) {
+      const errorMsg = data.error.englishPopup ? data.error.englishPopup.body : JSON.stringify(data.error);
+      throw new Error("MangaPlus API error: " + errorMsg);
+    }
+
     if (!data.success || !data.success.titleDetailView) {
       throw new Error("Tidak ada detail untuk manga id: " + titleId);
     }
@@ -154,7 +181,6 @@ function buildUrl(apiPath, params) {
  * Cari chapter terbaru dari detail judul
  */
 function findLatestChapter(detail) {
-  // Coba dari chapterListV2
   if (detail.chapterListV2 && detail.chapterListV2.length > 0) {
     let latest = detail.chapterListV2[0];
     for (const ch of detail.chapterListV2) {
@@ -165,7 +191,6 @@ function findLatestChapter(detail) {
     return chapterFromData(latest);
   }
 
-  // Coba dari chapterListGroup
   if (detail.chapterListGroup) {
     for (const group of detail.chapterListGroup) {
       const lists = [group.lastChapterList, group.midChapterList, group.firstChapterList];
@@ -220,11 +245,9 @@ function parseChapterNumber(text) {
  */
 function extractTitleID(input) {
   input = input.trim();
-  // Jika sudah numerik
   if (/^\d+$/.test(input)) {
     return input;
   }
-  // Ekstrak dari URL
   const parts = input.split("/");
   for (let i = 0; i < parts.length; i++) {
     if (parts[i] === "titles" && i + 1 < parts.length) {

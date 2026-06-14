@@ -12,7 +12,7 @@ const SOURCES = {
 };
 
 export async function onRequest(context) {
-  const { request, env } = context;
+  const { request } = context;
   const url = new URL(request.url);
 
   const corsHeaders = {
@@ -27,6 +27,8 @@ export async function onRequest(context) {
 
   const source = url.searchParams.get("source");
   const query = url.searchParams.get("query");
+
+  console.log("Search request: source=" + source + " query=" + query);
 
   if (!source || !query) {
     return new Response(JSON.stringify({ error: "Parameter source dan query wajib diisi" }), {
@@ -45,6 +47,7 @@ export async function onRequest(context) {
 
   try {
     const results = await adapter.search(query);
+    console.log("Search results: " + results.length + " items");
     return new Response(JSON.stringify(results), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
