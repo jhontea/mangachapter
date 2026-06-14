@@ -7,17 +7,16 @@ scheduler:
 
 # Notifier: pilih salah satu (telegram direkomendasikan)
 # Telegram: buat bot via @BotFather, dapatkan token + chat_id
+# Simpan token & chat_id di .env file (jangan di sini)
 telegram:
-  enabled: false
-  token: ""       # gunakan env MANGA_TELEGRAM_TOKEN
-  chat_id: ""     # gunakan env MANGA_TELEGRAM_CHAT_ID
+  enabled: true
 
+# Email: disable jika pakai Telegram
 email:
   enabled: false
   smtp_host: "smtp.gmail.com"
   smtp_port: 587
   username: "your@gmail.com"
-  password: ""            # gunakan env MANGA_SMTP_PASSWORD
   from: "your@gmail.com"
   to:
     - "your@gmail.com"
