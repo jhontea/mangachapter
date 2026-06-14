@@ -21,14 +21,14 @@ const (
 	mangaplusSecretKey = "4Kin9vGg"
 )
 
-// MangaPlus implements Source for the Manga Plus API.
+// MangaPlus mengimplementasikan Source untuk Manga Plus API.
 type MangaPlus struct {
 	httpClient *HTTPClient
 	language   string
 	secret     *string
 }
 
-// mangaPlusResponse is the top-level API response.
+// mangaPlusResponse adalah response API level atas.
 type mangaPlusResponse struct {
 	Success *mangaPlusSuccess `json:"success"`
 	Error   *mangaPlusError   `json:"error"`
@@ -88,20 +88,20 @@ type mangaPlusChapterListGroup struct {
 	LastChapterList  []mangaPlusChapter `json:"lastChapterList"`
 }
 
-// NewMangaPlus creates a new Manga Plus source adapter.
+// NewMangaPlus membuat adapter sumber Manga Plus baru.
 func NewMangaPlus(language string) *MangaPlus {
 	mp := &MangaPlus{
 		httpClient: NewHTTPClient("MangaPlusShonenJump/"+mangaplusAppVer, 0),
 		language:   language,
 	}
-	// Try to register device
+	// Coba registrasi device
 	if err := mp.register(); err != nil {
-		slog.Warn("mangaplus device registration failed, will try unauthenticated", "error", err)
+		slog.Warn("registrasi device mangaplus gagal, akan mencoba tanpa autentikasi", "error", err)
 	}
 	return mp
 }
 
-// register registers a device with the Manga Plus API to get a secret token.
+// register mendaftarkan device ke Manga Plus API untuk mendapatkan token secret.
 func (m *MangaPlus) register() error {
 	deviceToken := md5Hex(fmt.Sprintf("manga-notifier-%d", time.Now().UnixNano()))
 	securityKey := md5Hex(deviceToken + mangaplusSecretKey)
@@ -117,24 +117,24 @@ func (m *MangaPlus) register() error {
 	}
 
 	if resp.Success == nil || resp.Success.RegisterationData == nil {
-		return fmt.Errorf("register: empty registration data")
+		return fmt.Errorf("register: data registrasi kosong")
 	}
 
 	m.secret = &resp.Success.RegisterationData.DeviceSecret
-	slog.Debug("mangaplus device registered")
+	slog.Debug("device mangaplus terdaftar")
 	return nil
 }
 
-// Search searches for manga on Manga Plus by query.
+// Search mencari manga di Manga Plus berdasarkan query.
 func (m *MangaPlus) Search(ctx context.Context, query string) ([]SearchResult, error) {
 	params := map[string]string{}
 	var resp mangaPlusResponse
 	if err := m.doAPI(ctx, "title_list/allV2", params, &resp); err != nil {
-		return nil, fmt.Errorf("mangaplus all titles: %w", err)
+		return nil, fmt.Errorf("mangaplus semua judul: %w", err)
 	}
 
 	if resp.Success == nil || resp.Success.AllTitlesViewV2 == nil {
-		return nil, fmt.Errorf("no titles found")
+		return nil, fmt.Errorf("tidak ditemukan judul")
 	}
 
 	queryLower := strings.ToLower(query)
@@ -153,15 +153,15 @@ func (m *MangaPlus) Search(ctx context.Context, query string) ([]SearchResult, e
 		}
 	}
 
-	slog.Debug("mangaplus search", "query", query, "results", len(results))
+	slog.Debug("pencarian mangaplus", "query", query, "hasil", len(results))
 	return results, nil
 }
 
-// GetLatestChapter fetches the latest chapter for a manga by its title ID.
+// GetLatestChapter mengambil chapter terbaru untuk manga berdasarkan title ID.
 func (m *MangaPlus) GetLatestChapter(ctx context.Context, mangaURL string) (*ChapterInfo, error) {
 	titleID := extractTitleID(mangaURL)
 	if titleID == "" {
-		return nil, fmt.Errorf("invalid manga URL or ID: %s", mangaURL)
+		return nil, fmt.Errorf("URL atau ID manga tidak valid: %s", mangaURL)
 	}
 
 	params := map[string]string{
@@ -170,17 +170,17 @@ func (m *MangaPlus) GetLatestChapter(ctx context.Context, mangaURL string) (*Cha
 
 	var resp mangaPlusResponse
 	if err := m.doAPI(ctx, "title_detailV3", params, &resp); err != nil {
-		return nil, fmt.Errorf("mangaplus get title %s: %w", titleID, err)
+		return nil, fmt.Errorf("mangaplus ambil judul %s: %w", titleID, err)
 	}
 
 	if resp.Success == nil || resp.Success.TitleDetailView == nil {
-		return nil, fmt.Errorf("no details for manga id %s", titleID)
+		return nil, fmt.Errorf("tidak ada detail untuk manga id %s", titleID)
 	}
 
 	return m.findLatestChapter(*resp.Success.TitleDetailView)
 }
 
-// doAPI performs an API request to the Manga Plus API.
+// doAPI melakukan request API ke Manga Plus API.
 func (m *MangaPlus) doAPI(ctx context.Context, apiPath string, params map[string]string, result *mangaPlusResponse) error {
 	method := http.MethodGet
 	if apiPath == "register" {
@@ -205,7 +205,7 @@ func (m *MangaPlus) doAPI(ctx context.Context, apiPath string, params map[string
 
 	req, err := http.NewRequestWithContext(ctx, method, u.String(), nil)
 	if err != nil {
-		return fmt.Errorf("create request: %w", err)
+		return fmt.Errorf("buat request: %w", err)
 	}
 	req.Header.Set("User-Agent", "MangaPlusShonenJump/"+mangaplusAppVer)
 	req.Header.Set("Accept", "*/*")
@@ -223,7 +223,7 @@ func (m *MangaPlus) doAPI(ctx context.Context, apiPath string, params map[string
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("read response: %w", err)
+		return fmt.Errorf("baca response: %w", err)
 	}
 
 	if err := json.Unmarshal(body, result); err != nil {
@@ -231,13 +231,13 @@ func (m *MangaPlus) doAPI(ctx context.Context, apiPath string, params map[string
 	}
 
 	if result.Error != nil && result.Error.EnglishPopup != nil {
-		return fmt.Errorf("API error: %s (%s)", result.Error.EnglishPopup.Subject, result.Error.EnglishPopup.Body)
+		return fmt.Errorf("error API: %s (%s)", result.Error.EnglishPopup.Subject, result.Error.EnglishPopup.Body)
 	}
 
 	return nil
 }
 
-// findLatestChapter finds the latest chapter from the title detail.
+// findLatestChapter mencari chapter terbaru dari detail judul.
 func (m *MangaPlus) findLatestChapter(detail mangaPlusTitleDetailView) (*ChapterInfo, error) {
 	if len(detail.ChapterListV2) > 0 {
 		var latest mangaPlusChapter
@@ -259,7 +259,7 @@ func (m *MangaPlus) findLatestChapter(detail mangaPlusTitleDetailView) (*Chapter
 		}
 	}
 
-	return nil, fmt.Errorf("no chapters found for manga")
+	return nil, fmt.Errorf("tidak ditemukan chapter untuk manga")
 }
 
 func findLatestFromGroup(group mangaPlusChapterListGroup) *ChapterInfo {
@@ -297,7 +297,7 @@ func chapterFromMangaPlusV2(ch mangaPlusChapter) *ChapterInfo {
 	if ch.SubTitle != nil {
 		info.Title = *ch.SubTitle
 	}
-	slog.Debug("mangaplus latest chapter", "chapter", info.Number, "num", info.NumValue)
+	slog.Debug("chapter terbaru mangaplus", "chapter", info.Number, "num", info.NumValue)
 	return info
 }
 

@@ -18,10 +18,10 @@ const (
 	maxRetries     = 2
 	retryBackoff   = 2 * time.Second
 	contextTimeout = 30 * time.Second
-	maxConcurrent  = 10 // max concurrent checks
+	maxConcurrent  = 10 // maksimum pengecekan bersamaan
 )
 
-// Result represents the outcome of checking a single manga.
+// Result merepresentasikan hasil pengecekan satu manga.
 type Result struct {
 	MangaID    int64
 	Title      string
@@ -32,14 +32,14 @@ type Result struct {
 	Error      error
 }
 
-// Checker orchestrates checking all tracked manga for new chapters.
+// Checker mengatur pengecekan semua manga yang dilacak untuk chapter baru.
 type Checker struct {
 	repo     storage.Repository
 	sources  map[string]source.Source
 	notifier notifier.Notifier
 }
 
-// New creates a new Checker with the given dependencies.
+// New membuat Checker baru dengan dependensi yang diberikan.
 func New(repo storage.Repository, sources map[string]source.Source, n notifier.Notifier) *Checker {
 	return &Checker{
 		repo:     repo,
@@ -48,15 +48,15 @@ func New(repo storage.Repository, sources map[string]source.Source, n notifier.N
 	}
 }
 
-// CheckAll checks all tracked manga for new chapters concurrently using errgroup.
-// It waits for all checks to complete before returning.
+// CheckAll memeriksa semua manga yang dilacak untuk chapter baru secara bersamaan menggunakan errgroup.
+// Menunggu semua pengecekan selesai sebelum mengembalikan hasil.
 func (c *Checker) CheckAll(ctx context.Context) ([]Result, error) {
 	mangaList, err := c.repo.ListManga(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("list manga: %w", err)
+		return nil, fmt.Errorf("daftar manga: %w", err)
 	}
 
-	slog.Info("checking all manga", "count", len(mangaList))
+	slog.Info("memeriksa semua manga", "jumlah", len(mangaList))
 
 	g, gctx := errgroup.WithContext(ctx)
 	g.SetLimit(maxConcurrent)
@@ -67,7 +67,7 @@ func (c *Checker) CheckAll(ctx context.Context) ([]Result, error) {
 	)
 
 	for _, m := range mangaList {
-		m := m // capture loop variable
+		m := m // tangkap variabel loop
 		g.Go(func() error {
 			r := c.checkOne(gctx, m)
 
@@ -75,28 +75,28 @@ func (c *Checker) CheckAll(ctx context.Context) ([]Result, error) {
 			results = append(results, r)
 			mu.Unlock()
 
-			// Log result
+			// Log hasil
 			if r.Error != nil {
-				slog.Error("check failed",
+				slog.Error("pemeriksaan gagal",
 					"manga_id", m.ID,
-					"title", m.Title,
-					"source", m.Source,
+					"judul", m.Title,
+					"sumber", m.Source,
 					"error", r.Error,
 				)
 			} else if r.NewChapter != "" {
-				slog.Info("new chapter found",
+				slog.Info("chapter baru ditemukan",
 					"manga_id", m.ID,
-					"title", m.Title,
+					"judul", m.Title,
 					"chapter", r.NewChapter,
 				)
 			} else {
-				slog.Debug("no new chapter",
+				slog.Debug("tidak ada chapter baru",
 					"manga_id", m.ID,
-					"title", m.Title,
+					"judul", m.Title,
 				)
 			}
 
-			return nil // don't propagate individual errors to errgroup
+			return nil // jangan propagasi error individual ke errgroup
 		})
 	}
 
@@ -104,7 +104,7 @@ func (c *Checker) CheckAll(ctx context.Context) ([]Result, error) {
 		return nil, fmt.Errorf("errgroup: %w", err)
 	}
 
-	// Print summary
+	// Cetak ringkasan
 	checked, newChapters, errors := 0, 0, 0
 	for _, r := range results {
 		checked++
@@ -114,27 +114,27 @@ func (c *Checker) CheckAll(ctx context.Context) ([]Result, error) {
 			newChapters++
 		}
 	}
-	slog.Info("check complete",
-		"checked", checked,
-		"new_chapters", newChapters,
-		"errors", errors,
+	slog.Info("pemeriksaan selesai",
+		"diperiksa", checked,
+		"chapter_baru", newChapters,
+		"error", errors,
 	)
 
 	return results, nil
 }
 
-// CheckOne checks a single manga by ID for new chapters.
+// CheckOne memeriksa satu manga berdasarkan ID untuk chapter baru.
 func (c *Checker) CheckOne(ctx context.Context, id int64) (*Result, error) {
 	m, err := c.repo.GetManga(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("get manga %d: %w", id, err)
+		return nil, fmt.Errorf("ambil manga %d: %w", id, err)
 	}
 
 	r := c.checkOne(ctx, *m)
 	return &r, nil
 }
 
-// checkOne performs the check for a single manga with retry logic.
+// checkOne melakukan pengecekan satu manga dengan logika retry.
 func (c *Checker) checkOne(ctx context.Context, m storage.TrackedManga) Result {
 	src, ok := c.sources[m.Source]
 	if !ok {
@@ -142,18 +142,18 @@ func (c *Checker) checkOne(ctx context.Context, m storage.TrackedManga) Result {
 			MangaID: m.ID,
 			Title:   m.Title,
 			Source:  m.Source,
-			Error:   fmt.Errorf("unknown source %q", m.Source),
+			Error:   fmt.Errorf("sumber tidak dikenal %q", m.Source),
 		}
 	}
 
-	// Fetch latest chapter with retry
+	// Ambil chapter terbaru dengan retry
 	var ch *source.ChapterInfo
 	var err error
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		if attempt > 0 {
-			slog.Debug("retrying fetch",
+			slog.Debug("mencoba ulang fetch",
 				"manga_id", m.ID,
-				"attempt", attempt,
+				"percobaan", attempt,
 			)
 			select {
 			case <-ctx.Done():
@@ -162,7 +162,7 @@ func (c *Checker) checkOne(ctx context.Context, m storage.TrackedManga) Result {
 			}
 		}
 
-		// Use a context with timeout per manga
+		// Gunakan context dengan timeout per manga
 		fetchCtx, cancel := context.WithTimeout(ctx, contextTimeout)
 		ch, err = src.GetLatestChapter(fetchCtx, m.URL)
 		cancel()
@@ -171,27 +171,26 @@ func (c *Checker) checkOne(ctx context.Context, m storage.TrackedManga) Result {
 			break
 		}
 	}
-	fmt.Printf(">>> current (db) m %+v\n", m)
-	fmt.Printf(">>> latest (web) ch %+v\n", ch)
+
 	if err != nil {
 		return Result{
 			MangaID: m.ID,
 			Title:   m.Title,
 			Source:  m.Source,
-			Error:   fmt.Errorf("fetch chapter after %d retries: %w", maxRetries, err),
+			Error:   fmt.Errorf("ambil chapter setelah %d retry: %w", maxRetries, err),
 		}
 	}
 
-	// Compare with stored chapter
+	// Bandingkan dengan chapter yang tersimpan
 	if !HasNewChapter(m.LastChapterNum, ch) {
-		// No new chapter — just update last checked
+		// Tidak ada chapter baru — hanya update last checked
 		if err := c.repo.UpdateLastChecked(ctx, m.ID); err != nil {
-			slog.Error("update last checked failed", "manga_id", m.ID, "error", err)
+			slog.Error("update last checked gagal", "manga_id", m.ID, "error", err)
 		}
 		return Result{MangaID: m.ID, Title: m.Title, Source: m.Source, Checked: true}
 	}
 
-	// New chapter found — notify first, then update DB
+	// Chapter baru ditemukan — notifikasi dulu, lalu update DB
 	result := Result{
 		MangaID:    m.ID,
 		Title:      m.Title,
@@ -210,23 +209,23 @@ func (c *Checker) checkOne(ctx context.Context, m storage.TrackedManga) Result {
 			PreviousChapter: m.LastChapter,
 		}
 		if err := c.notifier.SendNewChapter(ctx, n); err != nil {
-			slog.Error("send notification failed",
+			slog.Error("kirim notifikasi gagal",
 				"manga_id", m.ID,
-				"title", m.Title,
+				"judul", m.Title,
 				"chapter", ch.Number,
 				"error", err,
 			)
-			// Per ARCHITECTURE.md: update DB even if notification fails
+			// Berdasarkan ARCHITECTURE.md: update DB meskipun notifikasi gagal
 		}
 	}
 
-	// Update DB with new chapter
+	// Update DB dengan chapter baru
 	chUpdate := storage.ChapterUpdate{
 		Number:   ch.Number,
 		NumValue: ch.NumValue,
 	}
 	if err := c.repo.UpdateLastChapter(ctx, m.ID, chUpdate); err != nil {
-		result.Error = fmt.Errorf("update last chapter: %w", err)
+		result.Error = fmt.Errorf("update chapter terakhir: %w", err)
 	}
 
 	return result

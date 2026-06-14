@@ -14,7 +14,7 @@ import (
 func newRunCmd(a *app) *cobra.Command {
 	return &cobra.Command{
 		Use:   "run",
-		Short: "Run the scheduler daemon (check periodically)",
+		Short: "Jalankan daemon scheduler (periksa berkala)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := a.init(); err != nil {
 				return err
@@ -23,7 +23,7 @@ func newRunCmd(a *app) *cobra.Command {
 
 			interval := a.cfg.SchedulerInterval()
 
-			// Create a checker function that ignores results
+			// Buat fungsi checker yang mengabaikan hasil
 			checkFn := scheduler.CheckAllFunc(func(ctx context.Context) error {
 				_, err := a.checker.CheckAll(ctx)
 				return err
@@ -31,14 +31,14 @@ func newRunCmd(a *app) *cobra.Command {
 
 			s := scheduler.New(checkFn, interval)
 
-			// Handle SIGINT/SIGTERM
+			// Tangani SIGINT/SIGTERM
 			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 			defer stop()
 
-			// Run scheduler in a goroutine
+			// Jalankan scheduler di goroutine
 			go s.Run(ctx)
 
-			// Wait for signal
+			// Tunggu sinyal
 			<-ctx.Done()
 			s.Stop()
 

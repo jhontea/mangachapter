@@ -2,6 +2,7 @@ package storage
 
 import "time"
 
+// TrackedManga merepresentasikan manga yang dilacak.
 type TrackedManga struct {
 	ID             int64
 	Source         string
@@ -14,6 +15,7 @@ type TrackedManga struct {
 	CreatedAt      time.Time
 }
 
+// Notification merepresentasikan notifikasi yang telah dikirim.
 type Notification struct {
 	ID         int64
 	MangaID    int64
@@ -22,6 +24,7 @@ type Notification struct {
 	SentAt     time.Time
 }
 
+// ChapterUpdate merepresentasikan pembaruan chapter.
 type ChapterUpdate struct {
 	Number   string
 	NumValue float64

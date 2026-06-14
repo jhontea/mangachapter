@@ -16,14 +16,14 @@ const (
 	httpTimeout     = 10 * time.Second
 )
 
-// TelegramNotifier sends notifications via Telegram Bot API.
+// TelegramNotifier mengirim notifikasi via Telegram Bot API.
 type TelegramNotifier struct {
 	botToken string
 	chatID   string
 	client   *http.Client
 }
 
-// NewTelegram creates a new TelegramNotifier.
+// NewTelegram membuat TelegramNotifier baru.
 func NewTelegram(botToken, chatID string) *TelegramNotifier {
 	return &TelegramNotifier{
 		botToken: botToken,
@@ -32,7 +32,7 @@ func NewTelegram(botToken, chatID string) *TelegramNotifier {
 	}
 }
 
-// SendNewChapter sends a Telegram message about a new chapter.
+// SendNewChapter mengirim pesan Telegram tentang chapter baru.
 func (t *TelegramNotifier) SendNewChapter(ctx context.Context, n NewChapterNotification) error {
 	text := t.buildMessage(n)
 
@@ -44,29 +44,29 @@ func (t *TelegramNotifier) SendNewChapter(ctx context.Context, n NewChapterNotif
 
 	body, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("marshal telegram payload: %w", err)
+		return fmt.Errorf("marshal payload telegram: %w", err)
 	}
 
 	url := fmt.Sprintf(telegramAPIBase, t.botToken)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
-		return fmt.Errorf("create telegram request: %w", err)
+		return fmt.Errorf("buat request telegram: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := t.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("send telegram message: %w", err)
+		return fmt.Errorf("kirim pesan telegram: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("telegram API error (status %d): %s", resp.StatusCode, string(respBody))
+		return fmt.Errorf("error API telegram (status %d): %s", resp.StatusCode, string(respBody))
 	}
 
-	slog.Info("telegram notification sent",
+	slog.Info("notifikasi telegram terkirim",
 		"chat_id", t.chatID,
 		"manga", n.MangaTitle,
 		"chapter", n.Chapter,
@@ -74,18 +74,18 @@ func (t *TelegramNotifier) SendNewChapter(ctx context.Context, n NewChapterNotif
 	return nil
 }
 
-// buildMessage creates the HTML-formatted Telegram message.
+// buildMessage membuat pesan Telegram dengan format HTML.
 func (t *TelegramNotifier) buildMessage(n NewChapterNotification) string {
 	var sb bytes.Buffer
-	sb.WriteString("📚 <b>New Chapter!</b>\n\n")
+	sb.WriteString("📚 <b>Chapter Baru!</b>\n\n")
 	sb.WriteString(fmt.Sprintf("📖 <b>%s</b>\n", n.MangaTitle))
-	sb.WriteString(fmt.Sprintf("🔗 Source: %s\n", n.Source))
+	sb.WriteString(fmt.Sprintf("🔗 Sumber: %s\n", n.Source))
 	sb.WriteString(fmt.Sprintf("📄 Chapter: <b>%s</b>\n", n.Chapter))
 	if n.PreviousChapter != "" {
-		sb.WriteString(fmt.Sprintf("⬅️ Previous: %s\n", n.PreviousChapter))
+		sb.WriteString(fmt.Sprintf("⬅️ Sebelumnya: %s\n", n.PreviousChapter))
 	}
 	if n.ChapterURL != "" {
-		sb.WriteString(fmt.Sprintf("\n🔗 <a href=\"%s\">Read Chapter</a>\n", n.ChapterURL))
+		sb.WriteString(fmt.Sprintf("\n🔗 <a href=\"%s\">Baca Chapter</a>\n", n.ChapterURL))
 	}
 	return sb.String()
 }

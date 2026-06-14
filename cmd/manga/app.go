@@ -25,7 +25,7 @@ type app struct {
 func (a *app) init() error {
 	cfg, err := config.Load(a.configPath)
 	if err != nil {
-		return fmt.Errorf("load config: %w", err)
+		return fmt.Errorf("muat config: %w", err)
 	}
 	a.cfg = cfg
 
@@ -46,17 +46,17 @@ func (a *app) init() error {
 
 	repo, err := storage.Open(cfg.Storage.Path)
 	if err != nil {
-		return fmt.Errorf("open storage: %w", err)
+		return fmt.Errorf("buka storage: %w", err)
 	}
 	a.repo = repo
 
-	// Initialize source adapters
+	// Inisialisasi adapter sumber
 	a.initSources()
 
-	// Initialize notifier
+	// Inisialisasi notifier
 	a.initNotifier()
 
-	// Initialize checker
+	// Inisialisasi checker
 	a.checker = checker.New(a.repo, source.AvailableMap(), a.notifier)
 
 	return nil
@@ -91,10 +91,10 @@ func (a *app) initSources() {
 }
 
 func (a *app) initNotifier() {
-	// Prefer Telegram if enabled, fall back to email
+	// Utamakan Telegram jika aktif, fallback ke email
 	if a.cfg.Telegram.Enabled {
 		a.notifier = notifier.NewTelegram(a.cfg.Telegram.Token, a.cfg.Telegram.ChatID)
-		slog.Info("notifier: telegram enabled")
+		slog.Info("notifier: telegram aktif")
 		return
 	}
 	if a.cfg.Email.Enabled {
@@ -106,9 +106,9 @@ func (a *app) initNotifier() {
 			a.cfg.Email.From,
 			a.cfg.Email.To,
 		)
-		slog.Info("notifier: email enabled")
+		slog.Info("notifier: email aktif")
 		return
 	}
 	a.notifier = nil
-	slog.Warn("notifier: no notifier configured")
+	slog.Warn("notifier: tidak ada notifier yang dikonfigurasi")
 }

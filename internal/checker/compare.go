@@ -4,13 +4,13 @@ import (
 	"project/mangachapter/internal/source"
 )
 
-// HasNewChapter determines if the fetched chapter is newer than the stored one.
-// Returns true if there's a new chapter to notify about.
+// HasNewChapter menentukan apakah chapter yang diambil lebih baru dari yang tersimpan.
+// Mengembalikan true jika ada chapter baru untuk dinotifikasi.
 func HasNewChapter(storedNumValue float64, fetched *source.ChapterInfo) bool {
 	if fetched == nil {
 		return false
 	}
-	// If no baseline chapter stored (0), treat as new
+	// Jika tidak ada chapter baseline yang tersimpan (0), anggap sebagai baru
 	if storedNumValue == 0 {
 		return true
 	}

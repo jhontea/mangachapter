@@ -12,7 +12,7 @@ func newRootCmd() *cobra.Command {
 
 	root := &cobra.Command{
 		Use:   "manga",
-		Short: "Monitor manga chapters and send email notifications",
+		Short: "Monitor manga chapters and send notifications",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			return a.init()
 		},

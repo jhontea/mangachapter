@@ -7,12 +7,12 @@ import (
 	"time"
 )
 
-// Checker defines the interface for checking manga.
+// Checker mendefinisikan interface untuk memeriksa manga.
 type Checker interface {
 	CheckAll(ctx context.Context) error
 }
 
-// Scheduler runs periodic checks.
+// Scheduler menjalankan pengecekan berkala.
 type Scheduler struct {
 	checker  Checker
 	interval time.Duration
@@ -22,7 +22,7 @@ type Scheduler struct {
 	mu       sync.Mutex
 }
 
-// New creates a new Scheduler.
+// New membuat Scheduler baru.
 func New(checker Checker, interval time.Duration) *Scheduler {
 	return &Scheduler{
 		checker:  checker,
@@ -30,8 +30,8 @@ func New(checker Checker, interval time.Duration) *Scheduler {
 	}
 }
 
-// Run starts the scheduler and blocks until the context is cancelled.
-// It runs an immediate first check, then waits the interval before the next check.
+// Run menjalankan scheduler dan memblokir sampai context dibatalkan.
+// Menjalankan pengecekan pertama segera, lalu menunggu interval sebelum pengecekan berikutnya.
 func (s *Scheduler) Run(ctx context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 	s.mu.Lock()
@@ -45,11 +45,11 @@ func (s *Scheduler) Run(ctx context.Context) {
 		s.mu.Unlock()
 	}()
 
-	slog.Info("scheduler started",
+	slog.Info("scheduler dimulai",
 		"interval", s.interval,
 	)
 
-	// Run immediately on start
+	// Jalankan segera saat start
 	s.runCheck(ctx)
 
 	ticker := time.NewTicker(s.interval)
@@ -58,7 +58,7 @@ func (s *Scheduler) Run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			slog.Info("scheduler stopped")
+			slog.Info("scheduler dihentikan")
 			return
 		case <-ticker.C:
 			s.runCheck(ctx)
@@ -66,7 +66,7 @@ func (s *Scheduler) Run(ctx context.Context) {
 	}
 }
 
-// Stop gracefully stops the scheduler.
+// Stop menghentikan scheduler secara graceful.
 func (s *Scheduler) Stop() {
 	s.mu.Lock()
 	if s.cancel != nil {
@@ -76,7 +76,7 @@ func (s *Scheduler) Stop() {
 	s.wg.Wait()
 }
 
-// IsRunning returns whether the scheduler is currently running.
+// IsRunning mengembalikan apakah scheduler sedang berjalan.
 func (s *Scheduler) IsRunning() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -84,16 +84,16 @@ func (s *Scheduler) IsRunning() bool {
 }
 
 func (s *Scheduler) runCheck(ctx context.Context) {
-	slog.Info("scheduler: running check")
+	slog.Info("scheduler: menjalankan pengecekan")
 
 	if err := s.checker.CheckAll(ctx); err != nil {
-		slog.Error("scheduler: check failed", "error", err)
+		slog.Error("scheduler: pengecekan gagal", "error", err)
 	}
 
-	slog.Info("scheduler: check complete")
+	slog.Info("scheduler: pengecekan selesai")
 }
 
-// CheckAllFunc adapts a function to the Checker interface.
+// CheckAllFunc mengadaptasi fungsi ke interface Checker.
 type CheckAllFunc func(ctx context.Context) error
 
 func (f CheckAllFunc) CheckAll(ctx context.Context) error {

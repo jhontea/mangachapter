@@ -2,12 +2,12 @@ package notifier
 
 import "context"
 
-// Notifier defines the interface for sending new chapter notifications.
+// Notifier mendefinisikan interface untuk mengirim notifikasi chapter baru.
 type Notifier interface {
 	SendNewChapter(ctx context.Context, n NewChapterNotification) error
 }
 
-// NewChapterNotification represents the data needed to send a new chapter notification.
+// NewChapterNotification berisi data yang dibutuhkan untuk mengirim notifikasi chapter baru.
 type NewChapterNotification struct {
 	MangaTitle      string
 	Source          string

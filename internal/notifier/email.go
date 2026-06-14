@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// EmailNotifier sends notifications via SMTP email.
+// EmailNotifier mengirim notifikasi via SMTP email.
 type EmailNotifier struct {
 	host     string
 	port     int
@@ -19,7 +19,7 @@ type EmailNotifier struct {
 	to       []string
 }
 
-// NewEmail creates a new EmailNotifier with the given SMTP settings.
+// NewEmail membuat EmailNotifier baru dengan pengaturan SMTP yang diberikan.
 func NewEmail(host string, port int, username, password, from string, to []string) *EmailNotifier {
 	return &EmailNotifier{
 		host:     host,
@@ -31,9 +31,9 @@ func NewEmail(host string, port int, username, password, from string, to []strin
 	}
 }
 
-// SendNewChapter sends an email notification about a new chapter.
+// SendNewChapter mengirim notifikasi email tentang chapter baru.
 func (e *EmailNotifier) SendNewChapter(ctx context.Context, n NewChapterNotification) error {
-	subject := fmt.Sprintf("New chapter: %s — %s", n.MangaTitle, n.Chapter)
+	subject := fmt.Sprintf("Chapter baru: %s — %s", n.MangaTitle, n.Chapter)
 	body := e.buildBody(n)
 	msg := e.buildMessage(subject, body)
 
@@ -44,25 +44,25 @@ func (e *EmailNotifier) SendNewChapter(ctx context.Context, n NewChapterNotifica
 		auth = smtp.PlainAuth("", e.username, e.password, e.host)
 	}
 
-	// Send to all recipients
+	// Kirim ke semua penerima
 	err := smtp.SendMail(addr, auth, e.from, e.to, []byte(msg))
 	if err != nil {
-		return fmt.Errorf("send email: %w", err)
+		return fmt.Errorf("kirim email: %w", err)
 	}
 
-	slog.Info("email sent",
-		"recipients", len(e.to),
-		"subject", subject,
+	slog.Info("email terkirim",
+		"penerima", len(e.to),
+		"subjek", subject,
 	)
 	return nil
 }
 
-// buildBody creates the plain text email body.
+// buildBody membuat isi email teks biasa.
 func (e *EmailNotifier) buildBody(n NewChapterNotification) string {
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("Manga chapter baru terdeteksi!\n\n"))
 	sb.WriteString(fmt.Sprintf("Manga   : %s\n", n.MangaTitle))
-	sb.WriteString(fmt.Sprintf("Source  : %s\n", n.Source))
+	sb.WriteString(fmt.Sprintf("Sumber  : %s\n", n.Source))
 	sb.WriteString(fmt.Sprintf("Chapter : %s\n", n.Chapter))
 	if n.PreviousChapter != "" {
 		sb.WriteString(fmt.Sprintf("Sebelum : %s\n", n.PreviousChapter))
@@ -74,7 +74,7 @@ func (e *EmailNotifier) buildBody(n NewChapterNotification) string {
 	return sb.String()
 }
 
-// buildMessage creates the full email message with headers.
+// buildMessage membuat pesan email lengkap dengan header.
 func (e *EmailNotifier) buildMessage(subject, body string) string {
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("From: %s\r\n", e.from))

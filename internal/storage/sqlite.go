@@ -40,23 +40,25 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE INDEX IF NOT EXISTS idx_notifications_manga_id ON notifications(manga_id);
 `
 
+// SQLiteRepository mengimplementasikan Repository menggunakan SQLite.
 type SQLiteRepository struct {
 	db *sql.DB
 }
 
+// Open membuka koneksi ke database SQLite dan menjalankan migrasi.
 func Open(path string) (*SQLiteRepository, error) {
 	if path != ":memory:" {
 		dir := filepath.Dir(path)
 		if dir != "" && dir != "." {
 			if err := os.MkdirAll(dir, 0o755); err != nil {
-				return nil, fmt.Errorf("create db directory: %w", err)
+				return nil, fmt.Errorf("buat direktori db: %w", err)
 			}
 		}
 	}
 
 	db, err := sql.Open("sqlite", path)
 	if err != nil {
-		return nil, fmt.Errorf("open sqlite: %w", err)
+		return nil, fmt.Errorf("buka sqlite: %w", err)
 	}
 
 	db.SetMaxOpenConns(1)
@@ -73,11 +75,12 @@ func Open(path string) (*SQLiteRepository, error) {
 func (r *SQLiteRepository) migrate() error {
 	_, err := r.db.Exec(schema)
 	if err != nil {
-		return fmt.Errorf("migrate schema: %w", err)
+		return fmt.Errorf("migrasi schema: %w", err)
 	}
 	return nil
 }
 
+// Close menutup koneksi database.
 func (r *SQLiteRepository) Close() error {
 	if r.db == nil {
 		return nil
@@ -85,6 +88,7 @@ func (r *SQLiteRepository) Close() error {
 	return r.db.Close()
 }
 
+// AddManga menambahkan manga baru ke daftar yang dilacak.
 func (r *SQLiteRepository) AddManga(ctx context.Context, m *TrackedManga) error {
 	res, err := r.db.ExecContext(ctx, `
 		INSERT INTO tracked_manga (source, source_id, title, url, last_chapter, last_chapter_num, last_checked)
@@ -105,10 +109,11 @@ func (r *SQLiteRepository) AddManga(ctx context.Context, m *TrackedManga) error 
 	return nil
 }
 
+// RemoveManga menghapus manga dari daftar yang dilacak.
 func (r *SQLiteRepository) RemoveManga(ctx context.Context, id int64) error {
 	res, err := r.db.ExecContext(ctx, `DELETE FROM tracked_manga WHERE id = ?`, id)
 	if err != nil {
-		return fmt.Errorf("delete manga: %w", err)
+		return fmt.Errorf("hapus manga: %w", err)
 	}
 	n, err := res.RowsAffected()
 	if err != nil {
@@ -120,6 +125,7 @@ func (r *SQLiteRepository) RemoveManga(ctx context.Context, id int64) error {
 	return nil
 }
 
+// ListManga mengembalikan semua manga yang dilacak.
 func (r *SQLiteRepository) ListManga(ctx context.Context) ([]TrackedManga, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, source, source_id, title, url, last_chapter, last_chapter_num, last_checked, created_at
@@ -127,7 +133,7 @@ func (r *SQLiteRepository) ListManga(ctx context.Context) ([]TrackedManga, error
 		ORDER BY title ASC
 	`)
 	if err != nil {
-		return nil, fmt.Errorf("list manga: %w", err)
+		return nil, fmt.Errorf("daftar manga: %w", err)
 	}
 	defer rows.Close()
 
@@ -140,11 +146,12 @@ func (r *SQLiteRepository) ListManga(ctx context.Context) ([]TrackedManga, error
 		items = append(items, *m)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate manga rows: %w", err)
+		return nil, fmt.Errorf("iterasi baris manga: %w", err)
 	}
 	return items, nil
 }
 
+// GetManga mengembalikan manga berdasarkan ID.
 func (r *SQLiteRepository) GetManga(ctx context.Context, id int64) (*TrackedManga, error) {
 	row := r.db.QueryRowContext(ctx, `
 		SELECT id, source, source_id, title, url, last_chapter, last_chapter_num, last_checked, created_at
@@ -162,6 +169,7 @@ func (r *SQLiteRepository) GetManga(ctx context.Context, id int64) (*TrackedMang
 	return m, nil
 }
 
+// LastChapter memperbarui chapter terakhir yang diketahui.
 func (r *SQLiteRepository) UpdateLastChapter(ctx context.Context, id int64, ch ChapterUpdate) error {
 	res, err := r.db.ExecContext(ctx, `
 		UPDATE tracked_manga
@@ -169,7 +177,7 @@ func (r *SQLiteRepository) UpdateLastChapter(ctx context.Context, id int64, ch C
 		WHERE id = ?
 	`, ch.Number, ch.NumValue, id)
 	if err != nil {
-		return fmt.Errorf("update last chapter: %w", err)
+		return fmt.Errorf("update chapter terakhir: %w", err)
 	}
 	n, err := res.RowsAffected()
 	if err != nil {
@@ -181,6 +189,7 @@ func (r *SQLiteRepository) UpdateLastChapter(ctx context.Context, id int64, ch C
 	return nil
 }
 
+// UpdateLastChecked memperbarui waktu pengecekan terakhir.
 func (r *SQLiteRepository) UpdateLastChecked(ctx context.Context, id int64) error {
 	res, err := r.db.ExecContext(ctx, `
 		UPDATE tracked_manga
@@ -200,13 +209,14 @@ func (r *SQLiteRepository) UpdateLastChecked(ctx context.Context, id int64) erro
 	return nil
 }
 
+// LogNotification mencatat notifikasi yang telah dikirim.
 func (r *SQLiteRepository) LogNotification(ctx context.Context, mangaID int64, chapter, chapterURL string) error {
 	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO notifications (manga_id, chapter, chapter_url)
 		VALUES (?, ?, ?)
 	`, mangaID, chapter, nullString(chapterURL))
 	if err != nil {
-		return fmt.Errorf("log notification: %w", err)
+		return fmt.Errorf("catat notifikasi: %w", err)
 	}
 	return nil
 }
@@ -265,7 +275,7 @@ func parseSQLiteTime(value string) (time.Time, error) {
 			return t, nil
 		}
 	}
-	return time.Time{}, fmt.Errorf("unsupported time format %q", value)
+	return time.Time{}, fmt.Errorf("format waktu tidak didukung %q", value)
 }
 
 func nullString(s string) any {

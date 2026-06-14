@@ -19,6 +19,8 @@ func TestParseChapterNumber(t *testing.T) {
 		{"Chapter 1130", 1130, "Chapter 1130"},
 		{"Chapter 0.5", 0.5, "Chapter 0.5"},
 		{"  Chapter 42  ", 42, "Chapter 42"},
+		{"#236", 236, "Chapter 236"},
+		{"#123.5", 123.5, "Chapter 123.5"},
 		{"No chapter here", 0, "No chapter here"},
 		{"", 0, ""},
 	}
@@ -41,15 +43,15 @@ func TestExtractSlugFromURL(t *testing.T) {
 		input string
 		want  string
 	}{
-		// Standard Kiryuu URLs
+		// URL Kiryuu standar
 		{"https://v6.kiryuu.to/manga/one-piece/", "one-piece"},
 		{"https://v6.kiryuu.to/manga/one-piece", "one-piece"},
 		{"https://v6.kiryuu.to/manga/jujutsu-kaisen/", "jujutsu-kaisen"},
-		// Old domain — slug extraction still works
+		// Domain lama — ekstraksi slug tetap berfungsi
 		{"https://old-domain.example.com/manga/mairimashita-iruma-kun/", "mairimashita-iruma-kun"},
-		// Any domain with /manga/ path
+		// Domain apapun dengan path /manga/
 		{"https://example.com/manga/just-a-slug/", "just-a-slug"},
-		// No /manga/ path — returns empty
+		// Tidak ada path /manga/ — mengembalikan kosong
 		{"https://example.com/no-manga-path/", ""},
 		{"", ""},
 	}

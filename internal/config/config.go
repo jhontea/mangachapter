@@ -22,6 +22,7 @@ const (
 	defaultMangaPlusLang = "eng"
 )
 
+// Config menyimpan semua konfigurasi aplikasi.
 type Config struct {
 	Scheduler SchedulerConfig `yaml:"scheduler"`
 	Email     EmailConfig     `yaml:"email"`
@@ -31,11 +32,13 @@ type Config struct {
 	Log       LogConfig       `yaml:"log"`
 }
 
+// SchedulerConfig untuk pengaturan interval pengecekan.
 type SchedulerConfig struct {
 	Interval string `yaml:"interval"`
 	Cron     string `yaml:"cron"`
 }
 
+// EmailConfig untuk pengaturan notifikasi email.
 type EmailConfig struct {
 	Enabled  bool     `yaml:"enabled"`
 	SMTPHost string   `yaml:"smtp_host"`
@@ -46,40 +49,47 @@ type EmailConfig struct {
 	To       []string `yaml:"to"`
 }
 
+// TelegramConfig untuk pengaturan notifikasi Telegram.
 type TelegramConfig struct {
 	Enabled bool   `yaml:"enabled"`
 	Token   string `yaml:"token"`
 	ChatID  string `yaml:"chat_id"`
 }
 
+// StorageConfig untuk pengaturan penyimpanan data.
 type StorageConfig struct {
 	Path string `yaml:"path"`
 }
 
+// SourcesConfig untuk pengaturan sumber manga.
 type SourcesConfig struct {
 	Kiryuu    KiryuuConfig    `yaml:"kiryuu"`
 	MangaPlus MangaPlusConfig `yaml:"mangaplus"`
 }
 
+// KiryuuConfig untuk pengaturan sumber Kiryuu.
 type KiryuuConfig struct {
 	BaseURL   string `yaml:"base_url"`
 	UserAgent string `yaml:"user_agent"`
 	RateLimit string `yaml:"rate_limit"`
 }
 
+// MangaPlusConfig untuk pengaturan sumber Manga Plus.
 type MangaPlusConfig struct {
 	BaseURL  string `yaml:"base_url"`
 	Language string `yaml:"language"`
 }
 
+// LogConfig untuk pengaturan level log.
 type LogConfig struct {
 	Level string `yaml:"level"`
 }
 
+// Load membaca konfigurasi dari file YAML dan environment variables.
 func Load(path string) (*Config, error) {
-	// Load .env file if exists (silently ignore if not found)
+	// Muat file .env jika ada (abaikan jika tidak ditemukan)
 	if err := godotenv.Load(); err != nil {
-		slog.Debug("no .env file found, using system env only", "error", err)
+		slog.Debug("file .env tidak ditemukan, menggunakan env sistem", "error", err)
 	}
 
 	if path == "" {
@@ -91,7 +101,7 @@ func Load(path string) (*Config, error) {
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("read config %q: %w", path, err)
+		return nil, fmt.Errorf("baca config %q: %w", path, err)
 	}
 
 	cfg := defaultConfig()
@@ -110,8 +120,8 @@ func Load(path string) (*Config, error) {
 func defaultConfig() *Config {
 	return &Config{
 		Scheduler: SchedulerConfig{Interval: defaultInterval},
-		Email:     EmailConfig{Enabled: true, SMTPPort: 587},
-		Telegram:  TelegramConfig{Enabled: true},
+		Email:     EmailConfig{Enabled: false, SMTPPort: 587},
+		Telegram:  TelegramConfig{Enabled: false},
 		Storage:   StorageConfig{Path: defaultDBPath},
 		Sources: SourcesConfig{
 			Kiryuu: KiryuuConfig{
@@ -157,7 +167,7 @@ func (c *Config) applyEnvOverrides() {
 
 func (c *Config) validate() error {
 	if c.Storage.Path == "" {
-		return fmt.Errorf("storage.path is required")
+		return fmt.Errorf("storage.path wajib diisi")
 	}
 
 	if c.Scheduler.Cron == "" {
@@ -175,33 +185,35 @@ func (c *Config) validate() error {
 
 	if c.Email.Enabled {
 		if c.Email.SMTPHost == "" {
-			return fmt.Errorf("email.smtp_host is required when email is enabled")
+			return fmt.Errorf("email.smtp_host wajib diisi jika email aktif")
 		}
 		if c.Email.SMTPPort == 0 {
-			return fmt.Errorf("email.smtp_port is required when email is enabled")
+			return fmt.Errorf("email.smtp_port wajib diisi jika email aktif")
 		}
 		if len(c.Email.To) == 0 {
-			return fmt.Errorf("email.to is required when email is enabled")
+			return fmt.Errorf("email.to wajib diisi jika email aktif")
 		}
 	}
 
 	if c.Telegram.Enabled {
 		if c.Telegram.Token == "" {
-			return fmt.Errorf("telegram.token is required when telegram is enabled")
+			return fmt.Errorf("telegram.token wajib diisi jika telegram aktif")
 		}
 		if c.Telegram.ChatID == "" {
-			return fmt.Errorf("telegram.chat_id is required when telegram is enabled")
+			return fmt.Errorf("telegram.chat_id wajib diisi jika telegram aktif")
 		}
 	}
 
 	return nil
 }
 
+// KiryuuRateLimit mengembalikan rate limit sebagai time.Duration.
 func (c *Config) KiryuuRateLimit() time.Duration {
 	d, _ := time.ParseDuration(c.Sources.Kiryuu.RateLimit)
 	return d
 }
 
+// SchedulerInterval mengembalikan interval scheduler sebagai time.Duration.
 func (c *Config) SchedulerInterval() time.Duration {
 	d, _ := time.ParseDuration(c.Scheduler.Interval)
 	return d

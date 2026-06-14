@@ -33,27 +33,27 @@ func main() {
 
 	s := &server{}
 	if err := s.init(); err != nil {
-		slog.Error("failed to initialize", "error", err)
+		slog.Error("gagal menginisialisasi", "error", err)
 		os.Exit(1)
 	}
 	defer s.repo.Close()
 
 	mux := http.NewServeMux()
 
-	// Static files
+	// File statis
 	mux.HandleFunc("/", s.handleIndex)
 	mux.HandleFunc("/static/", s.handleStatic)
 
-	// API endpoints
+	// Endpoint API
 	mux.HandleFunc("/api/manga", s.handleManga)
 	mux.HandleFunc("/api/manga/", s.handleMangaByID)
 	mux.HandleFunc("/api/manga/check-all", s.handleCheckAll)
 	mux.HandleFunc("/api/manga/search", s.handleSearch)
 	mux.HandleFunc("/api/sources", s.handleSources)
 
-	slog.Info("web server starting", "port", port)
+	slog.Info("server web dimulai", "port", port)
 	if err := http.ListenAndServe(":"+port, mux); err != nil {
-		slog.Error("server error", "error", err)
+		slog.Error("error server", "error", err)
 		os.Exit(1)
 	}
 }
@@ -61,7 +61,7 @@ func main() {
 func (s *server) init() error {
 	cfg, err := config.Load("")
 	if err != nil {
-		return fmt.Errorf("load config: %w", err)
+		return fmt.Errorf("muat config: %w", err)
 	}
 	s.cfg = cfg
 
@@ -69,11 +69,11 @@ func (s *server) init() error {
 
 	repo, err := storage.Open(cfg.Storage.Path)
 	if err != nil {
-		return fmt.Errorf("open storage: %w", err)
+		return fmt.Errorf("buka storage: %w", err)
 	}
 	s.repo = repo
 
-	// Initialize sources
+	// Inisialisasi sumber
 	kiryuuClient := source.NewHTTPClient(
 		cfg.Sources.Kiryuu.UserAgent,
 		cfg.KiryuuRateLimit(),
@@ -88,10 +88,10 @@ func (s *server) init() error {
 	mangaplus := source.NewMangaPlus(cfg.Sources.MangaPlus.Language)
 	source.Register("mangaplus", mangaplus)
 
-	// Initialize notifier — prefer Telegram if enabled, fall back to email
+	// Inisialisasi notifier — utamakan Telegram jika aktif, fallback ke email
 	if cfg.Telegram.Enabled {
 		s.notifier = notifier.NewTelegram(cfg.Telegram.Token, cfg.Telegram.ChatID)
-		slog.Info("notifier: telegram enabled")
+		slog.Info("notifier: telegram aktif")
 	} else if cfg.Email.Enabled {
 		s.notifier = notifier.NewEmail(
 			cfg.Email.SMTPHost,
@@ -101,9 +101,9 @@ func (s *server) init() error {
 			cfg.Email.From,
 			cfg.Email.To,
 		)
-		slog.Info("notifier: email enabled")
+		slog.Info("notifier: email aktif")
 	} else {
-		slog.Warn("notifier: no notifier configured")
+		slog.Warn("notifier: tidak ada notifier yang dikonfigurasi")
 	}
 
 	s.checker = checker.New(s.repo, source.AvailableMap(), s.notifier)
@@ -147,20 +147,20 @@ func (s *server) handleManga(w http.ResponseWriter, r *http.Request) {
 			SourceID string `json:"source_id"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			httpError(w, fmt.Errorf("invalid request body: %w", err))
+			httpError(w, fmt.Errorf("body request tidak valid: %w", err))
 			return
 		}
 
 		src, ok := source.Get(req.Source)
 		if !ok {
-			httpError(w, fmt.Errorf("unknown source %q", req.Source))
+			httpError(w, fmt.Errorf("sumber tidak dikenal %q", req.Source))
 			return
 		}
 
-		// Fetch latest chapter
+		// Ambil chapter terbaru
 		ch, err := src.GetLatestChapter(ctx, req.URL)
 		if err != nil {
-			httpError(w, fmt.Errorf("fetch latest chapter: %w", err))
+			httpError(w, fmt.Errorf("ambil chapter terbaru: %w", err))
 			return
 		}
 
@@ -190,7 +190,7 @@ func (s *server) handleManga(w http.ResponseWriter, r *http.Request) {
 func (s *server) handleMangaByID(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
-	// Extract ID from path: /api/manga/{id}
+	// Ekstrak ID dari path: /api/manga/{id}
 	path := strings.TrimPrefix(r.URL.Path, "/api/manga/")
 	if path == "" || path == "check-all" || path == "search" {
 		return
@@ -199,7 +199,7 @@ func (s *server) handleMangaByID(w http.ResponseWriter, r *http.Request) {
 	idStr := strings.Split(path, "/")[0]
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		httpError(w, fmt.Errorf("invalid manga ID: %w", err))
+		httpError(w, fmt.Errorf("ID manga tidak valid: %w", err))
 		return
 	}
 
@@ -221,7 +221,7 @@ func (s *server) handleMangaByID(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 
 	case http.MethodPost:
-		// Check single manga
+		// Periksa satu manga
 		result, err := s.checker.CheckOne(ctx, id)
 		if err != nil {
 			httpError(w, err)
@@ -262,13 +262,13 @@ func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("query")
 
 	if sourceName == "" || query == "" {
-		httpError(w, fmt.Errorf("source and query parameters are required"))
+		httpError(w, fmt.Errorf("parameter source dan query wajib diisi"))
 		return
 	}
 
 	src, ok := source.Get(sourceName)
 	if !ok {
-		httpError(w, fmt.Errorf("unknown source %q", sourceName))
+		httpError(w, fmt.Errorf("sumber tidak dikenal %q", sourceName))
 		return
 	}
 
