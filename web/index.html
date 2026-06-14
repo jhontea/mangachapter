@@ -815,7 +815,7 @@
             } catch (e) {} finally {
                 loadingButtons.delete(btnId);
                 clearLoadingState(btnId);
-                loadManga();
+                await loadManga();
                 restoreLoadingStates();
             }
         }
@@ -864,7 +864,7 @@
             } finally {
                 loadingButtons.delete(btnId);
                 clearLoadingState(btnId);
-                loadManga();
+                await loadManga();
                 restoreLoadingStates();
             }
         }
