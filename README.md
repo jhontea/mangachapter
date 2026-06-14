@@ -20,7 +20,7 @@ Aplikasi Go untuk memantau chapter manga baru dari beberapa sumber web, lalu men
 | Fase 1 — Foundation | Selesai | Go module, config, storage, CLI dasar |
 | Fase 2 — Source Adapters | Selesai | Kiryuu + Manga Plus |
 | Fase 3 — Checker & Notifier | Selesai | Logika cek + email SMTP |
-| Fase 4 — Scheduler | Belum | Cron daemon + polish |
+| Fase 4 — Scheduler | Selesai | Cron daemon + polish |
 
 Detail implementasi: [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md)
 

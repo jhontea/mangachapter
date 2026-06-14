@@ -129,23 +129,23 @@ go build ./cmd/manga
 
 ---
 
-## Fase 4 — Scheduler & Polish
+## Fase 4 — Scheduler & Polish ✅
 
 ### 4.1 Scheduler
 
-- [ ] `internal/scheduler/scheduler.go`
-- [ ] Parse interval from config
-- [ ] `manga run` — block, handle SIGINT
+- [x] `internal/scheduler/scheduler.go` — periodic runner with ticker
+- [x] Parse interval from config (`scheduler.interval`)
+- [x] `manga run` — block, handle SIGINT/SIGTERM
 
 ### 4.2 Logging & UX
 
-- [ ] Structured slog throughout
-- [ ] `--debug` flag
-- [ ] Friendly error messages di CLI
+- [x] Structured slog throughout
+- [x] `--debug` flag (app.go)
+- [x] Friendly error messages di CLI
 
 ### 4.3 README update
 
-- [ ] Update status table di README
+- [x] Update status table di README
 - [ ] Troubleshooting section
 
 ### 4.4 Deliverable Fase 4
@@ -159,11 +159,11 @@ go build ./cmd/manga
 
 ## Fase 5 — Opsional (future)
 
-- [ ] Web UI (embed atau separate)
+- [x] Web UI (cmd/web + web/index.html)
+- [x] Parallel checker dengan rate limit (errgroup)
 - [ ] Discord/Telegram webhook notifier
 - [ ] Docker + docker-compose
 - [ ] Windows service wrapper
-- [ ] Parallel checker dengan rate limit
 - [ ] Source tambahan (MangaDex, dll.)
 
 ---
@@ -189,10 +189,10 @@ go build ./cmd/manga
 
 ## Definition of Done (whole project)
 
-- [ ] Add/list/remove manga via CLI
-- [ ] Baseline chapter saved on add (no email)
-- [ ] Manual check detects new chapter
-- [ ] Email sent on new chapter
-- [ ] Scheduler runs hourly checks
-- [ ] Config via YAML + env
-- [ ] README accurate
+- [x] Add/list/remove manga via CLI
+- [x] Baseline chapter saved on add (no email)
+- [x] Manual check detects new chapter
+- [x] Email sent on new chapter
+- [x] Scheduler runs hourly checks
+- [x] Config via YAML + env
+- [x] README accurate

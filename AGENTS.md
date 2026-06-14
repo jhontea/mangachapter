@@ -14,7 +14,8 @@ Instruksi untuk melanjutkan development proyek **Manga Chapter Notifier**.
 - **Fase 1 (Foundation):** selesai — config, storage, CLI skeleton
 - **Fase 2 (Source Adapters):** selesai — Kiryuu + Manga Plus adapters, CLI add/search
 - **Fase 3 (Checker & Notifier):** selesai — chapter comparison, checker orchestrator, email SMTP notifier, CLI check
-- **Langkah berikutnya:** Fase 4 — scheduler & polish (cron daemon + graceful shutdown)
+- **Fase 4 (Scheduler & Polish):** selesai — scheduler daemon, graceful shutdown, structured slog
+- **Fase 5 (Opsional):** Web UI selesai, parallel checker selesai; sisanya: webhook notifier, Docker, etc.
 
 ## Konvensi Kode
 
