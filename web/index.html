@@ -47,6 +47,15 @@
             from { transform: translateY(8px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
+        
+        @media (max-width: 1024px) {
+            .sidebar-collapsed {
+                transform: translateX(-100%);
+            }
+            .sidebar-open {
+                transform: translateX(0);
+            }
+        }
     </style>
 <script id="tailwind-config">
         tailwind.config = {
@@ -119,7 +128,7 @@
               "spacing": {
                       "gutter-list": "8px",
                       "gutter-grid": "12px",
-                      "container-max": "960px",
+                      "container-max": "1280px",
                       "padding-card": "20px",
                       "padding-item": "14px",
                       "base": "4px",
@@ -151,10 +160,23 @@
         }
     </script>
 </head>
-<body class="bg-background text-on-surface custom-scrollbar">
+<body class="bg-background text-on-surface custom-scrollbar overflow-x-hidden">
+<!-- Mobile Header -->
+<header class="lg:hidden sticky top-0 z-50 bg-surface-secondary border-b border-surface-variant px-4 py-3 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-primary-container rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container text-[20px]" data-weight="fill">menu_book</span>
+</div>
+<h1 class="font-headline-sm text-headline-sm font-black text-primary-container leading-none">MangaVault</h1>
+</div>
+<button class="p-2 text-on-surface hover:bg-surface-container rounded-lg" onclick="toggleSidebar()">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</header>
 <!-- Sidebar Navigation -->
-<aside class="fixed left-0 top-0 h-full w-64 bg-surface-secondary border-r border-surface-variant flex flex-col p-4 gap-4 z-40">
-<div class="flex items-center gap-3 px-2 py-4">
+<aside class="fixed left-0 top-0 h-full w-64 bg-surface-secondary border-r border-surface-variant flex flex-col p-4 gap-4 z-[60] transition-transform duration-300 sidebar-collapsed lg:translate-x-0" id="sidebar">
+<div class="flex items-center justify-between px-2 py-4">
+<div class="flex items-center gap-3">
 <div class="w-8 h-8 bg-primary-container rounded flex items-center justify-center">
 <span class="material-symbols-outlined text-on-primary-container text-[20px]" data-weight="fill">menu_book</span>
 </div>
@@ -162,6 +184,10 @@
 <h1 class="font-headline-sm text-headline-sm font-black text-primary-container leading-none">MangaVault</h1>
 <p class="font-caption text-caption text-secondary-fixed-dim">Technical Reader</p>
 </div>
+</div>
+<button class="lg:hidden p-1 text-text-muted hover:text-on-surface" onclick="toggleSidebar()">
+<span class="material-symbols-outlined">close</span>
+</button>
 </div>
 <nav class="flex-1 space-y-1 mt-4">
 <button class="w-full flex items-center gap-3 px-3 py-2.5 transition-all duration-200 bg-primary-container text-on-primary-container rounded-lg font-bold" id="nav-dashboard" onclick="switchTab('dashboard')">
@@ -196,16 +222,19 @@
 </button>
 </div>
 </aside>
+<!-- Sidebar Overlay -->
+<div class="fixed inset-0 bg-black/60 z-50 hidden transition-opacity lg:hidden" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 <!-- Main Content Area -->
-<main class="ml-64 min-h-screen p-8 max-w-container-max mx-auto">
+<main class="lg:ml-64 min-h-screen p-4 sm:p-6 lg:p-8">
+<div class="max-w-container-max mx-auto">
 <!-- Dashboard Section -->
-<section class="space-y-8" id="dashboard-section">
-<header class="flex justify-between items-end">
+<section class="space-y-6 sm:space-y-8" id="dashboard-section">
+<header class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
 <div>
-<h2 class="font-headline-sm text-headline-sm text-text-high-contrast opacity-60 uppercase tracking-widest mb-1">Library Overview</h2>
-<h1 class="text-3xl font-bold text-text-high-contrast">Reading List</h1>
+<h2 class="font-headline-sm text-caption sm:text-headline-sm text-text-high-contrast opacity-60 uppercase tracking-widest mb-1">Library Overview</h2>
+<h1 class="text-2xl sm:text-3xl font-bold text-text-high-contrast">Reading List</h1>
 </div>
-<div class="flex gap-4 items-center">
+<div class="flex gap-4 items-center self-stretch sm:self-auto justify-between sm:justify-start bg-surface-container-low p-3 sm:p-0 sm:bg-transparent rounded-lg">
 <div class="flex flex-col items-end">
 <span class="font-caption text-caption text-text-muted">Total Titles</span>
 <span class="font-stat-value text-stat-value text-primary-container" id="total-manga-count">00</span>
@@ -217,27 +246,27 @@
 </div>
 </div>
 </header>
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter-grid" id="manga-list">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-gutter-grid" id="manga-list">
 <!-- Manga cards will be injected here -->
 </div>
 </section>
 <!-- Search Section -->
-<section class="hidden space-y-8" id="search-section">
+<section class="hidden space-y-6 sm:space-y-8" id="search-section">
 <header>
-<h2 class="font-headline-sm text-headline-sm text-text-high-contrast opacity-60 uppercase tracking-widest mb-1">Global Discovery</h2>
-<h1 class="text-3xl font-bold text-text-high-contrast">Search Sources</h1>
+<h2 class="font-headline-sm text-caption sm:text-headline-sm text-text-high-contrast opacity-60 uppercase tracking-widest mb-1">Global Discovery</h2>
+<h1 class="text-2xl sm:text-3xl font-bold text-text-high-contrast">Search Sources</h1>
 </header>
-<div class="bg-surface-secondary border border-surface-variant rounded-xl p-6 space-y-6">
-<div class="flex flex-col sm:flex-row gap-4 items-center">
-<div class="flex bg-surface-container p-1 rounded-lg border border-surface-variant">
-<button class="px-4 py-1.5 rounded-md font-body-md text-body-md transition-all bg-primary-container text-on-primary-container" id="btn-kiryuu" onclick="setSource('kiryuu')">Kiryuu</button>
-<button class="px-4 py-1.5 rounded-md font-body-md text-body-md transition-all text-secondary-fixed-dim" id="btn-mangaplus" onclick="setSource('mangaplus')">MangaPlus</button>
+<div class="bg-surface-secondary border border-surface-variant rounded-xl p-4 sm:p-6 space-y-6">
+<div class="flex flex-col md:flex-row gap-4 items-center">
+<div class="flex bg-surface-container p-1 rounded-lg border border-surface-variant w-full md:w-auto">
+<button class="flex-1 md:flex-none px-4 py-1.5 rounded-md font-body-md text-body-md transition-all bg-primary-container text-on-primary-container" id="btn-kiryuu" onclick="setSource('kiryuu')">Kiryuu</button>
+<button class="flex-1 md:flex-none px-4 py-1.5 rounded-md font-body-md text-body-md transition-all text-secondary-fixed-dim" id="btn-mangaplus" onclick="setSource('mangaplus')">MangaPlus</button>
 </div>
 <div class="relative flex-1 w-full">
 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">search</span>
 <input class="w-full bg-surface-container-lowest border border-surface-variant rounded-lg pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-primary-container/30 focus:border-primary-container outline-none transition-all text-on-surface font-body-md" id="search-query" placeholder="Type manga title..." type="text"/>
 </div>
-<button class="bg-primary-container hover:bg-accent-hover text-on-primary-container px-6 py-2.5 rounded-lg font-bold transition-all flex items-center gap-2 shrink-0" onclick="doSearch()">
+<button class="w-full md:w-auto bg-primary-container hover:bg-accent-hover text-on-primary-container px-6 py-2.5 rounded-lg font-bold transition-all flex items-center justify-center gap-2 shrink-0" onclick="doSearch()">
 <span>Search</span>
 </button>
 </div>
@@ -247,12 +276,12 @@
 </div>
 </section>
 <!-- Add Section -->
-<section class="hidden space-y-8" id="add-section">
+<section class="hidden space-y-6 sm:space-y-8" id="add-section">
 <header>
-<h2 class="font-headline-sm text-headline-sm text-text-high-contrast opacity-60 uppercase tracking-widest mb-1">System Registry</h2>
-<h1 class="text-3xl font-bold text-text-high-contrast">Manual Addition</h1>
+<h2 class="font-headline-sm text-caption sm:text-headline-sm text-text-high-contrast opacity-60 uppercase tracking-widest mb-1">System Registry</h2>
+<h1 class="text-2xl sm:text-3xl font-bold text-text-high-contrast">Manual Addition</h1>
 </header>
-<div class="max-w-xl bg-surface-secondary border border-surface-variant rounded-xl p-8 space-y-6 mx-auto">
+<div class="max-w-xl bg-surface-secondary border border-surface-variant rounded-xl p-6 sm:p-8 space-y-6 mx-auto">
 <div class="space-y-4">
 <div class="space-y-2">
 <label class="font-label-caps text-label-caps text-text-muted">MANGA TITLE</label>
@@ -262,7 +291,7 @@
 <label class="font-label-caps text-label-caps text-text-muted">SOURCE IDENTIFIER / URL</label>
 <input class="w-full bg-surface-container border border-surface-variant rounded-lg px-4 py-2.5 focus:border-primary-container outline-none text-on-surface font-body-md" id="add-url" placeholder="Slug or full URL" type="text"/>
 </div>
-<div class="grid grid-cols-2 gap-4">
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 <div class="space-y-2">
 <label class="font-label-caps text-label-caps text-text-muted">SOURCE PROVIDER</label>
 <select class="w-full bg-surface-container border border-surface-variant rounded-lg px-4 py-2.5 focus:border-primary-container outline-none text-on-surface font-body-md appearance-none" id="add-source">
@@ -282,44 +311,48 @@
 </div>
 </section>
 <!-- Check Section -->
-<section class="hidden space-y-8" id="check-section">
-<header class="flex justify-between items-center">
+<section class="hidden space-y-6 sm:space-y-8" id="check-section">
+<header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
 <div>
-<h2 class="font-headline-sm text-headline-sm text-text-high-contrast opacity-60 uppercase tracking-widest mb-1">Delta Synchronization</h2>
-<h1 class="text-3xl font-bold text-text-high-contrast">Update Center</h1>
+<h2 class="font-headline-sm text-caption sm:text-headline-sm text-text-high-contrast opacity-60 uppercase tracking-widest mb-1">Delta Synchronization</h2>
+<h1 class="text-2xl sm:text-3xl font-bold text-text-high-contrast">Update Center</h1>
 </div>
-<button class="bg-primary-container hover:bg-accent-hover text-on-primary-container px-6 py-2.5 rounded-lg font-bold transition-all flex items-center gap-2" id="btn-check-all" onclick="checkAll()">
+<button class="w-full sm:w-auto bg-primary-container hover:bg-accent-hover text-on-primary-container px-6 py-2.5 rounded-lg font-bold transition-all flex items-center justify-center gap-2" id="btn-check-all" onclick="checkAll()">
 <span class="material-symbols-outlined">sync</span>
 <span>Synchronize All</span>
 </button>
 </header>
 <div class="bg-surface-secondary border border-surface-variant rounded-xl overflow-hidden" id="check-results">
-<table class="w-full text-left font-body-md">
+<div class="overflow-x-auto custom-scrollbar">
+<table class="w-full text-left font-body-md min-w-[600px]">
 <thead>
 <tr class="bg-surface-container border-b border-surface-variant">
 <th class="px-6 py-4 font-label-caps text-text-muted">TITLE</th>
+<th class="px-6 py-4 font-label-caps text-text-muted">SOURCE</th>
 <th class="px-6 py-4 font-label-caps text-text-muted">LOCAL</th>
 <th class="px-6 py-4 font-label-caps text-text-muted">REMOTE</th>
+<th class="px-6 py-4 font-label-caps text-text-muted">LAST CHECKED</th>
 <th class="px-6 py-4 font-label-caps text-text-muted">STATUS</th>
 </tr>
 </thead>
 <tbody class="divide-y divide-surface-variant" id="update-tbody">
 <tr>
-<td class="px-6 py-12 text-center text-text-muted" colspan="4">
+<td class="px-6 py-12 text-center text-text-muted" colspan="6">
                                 Launch synchronization to detect new chapters
                             </td>
 </tr>
 </tbody>
 </table>
 </div>
+</div>
 </section>
 <!-- Stats Section -->
-<section class="hidden space-y-8" id="stats-section">
+<section class="hidden space-y-6 sm:space-y-8" id="stats-section">
 <header>
-<h2 class="font-headline-sm text-headline-sm text-text-high-contrast opacity-60 uppercase tracking-widest mb-1">Performance Analytics</h2>
-<h1 class="text-3xl font-bold text-text-high-contrast">Reading Stats</h1>
+<h2 class="font-headline-sm text-caption sm:text-headline-sm text-text-high-contrast opacity-60 uppercase tracking-widest mb-1">Performance Analytics</h2>
+<h1 class="text-2xl sm:text-3xl font-bold text-text-high-contrast">Reading Stats</h1>
 </header>
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 <div class="bg-surface-secondary border border-surface-variant p-6 rounded-xl">
 <p class="font-label-caps text-text-muted mb-2">CHAPTERS TRACKED</p>
 <p class="font-stat-value text-stat-value text-text-high-contrast">12,402</p>
@@ -333,15 +366,15 @@
 <p class="font-stat-value text-stat-value text-text-high-contrast">Kiryuu</p>
 <p class="text-text-muted text-body-sm mt-1">72% of library</p>
 </div>
-<div class="bg-surface-secondary border border-surface-variant p-6 rounded-xl">
+<div class="bg-surface-secondary border border-surface-variant p-6 rounded-xl sm:col-span-2 lg:col-span-1">
 <p class="font-label-caps text-text-muted mb-2">SYNC ACCURACY</p>
 <p class="font-stat-value text-stat-value text-text-high-contrast">99.8%</p>
 <p class="text-text-muted text-body-sm mt-1">No errors detected</p>
 </div>
 </div>
-<div class="bg-surface-secondary border border-surface-variant rounded-xl p-8">
+<div class="bg-surface-secondary border border-surface-variant rounded-xl p-6 sm:p-8 overflow-hidden">
 <h3 class="font-card-title text-card-title text-text-high-contrast mb-6">Activity Timeline</h3>
-<div class="h-48 flex items-end gap-2 px-4">
+<div class="h-48 flex items-end gap-1 sm:gap-2 px-1 sm:px-4">
 <!-- Faux Bar Chart -->
 <div class="flex-1 bg-primary-container/20 h-[40%] rounded-t-sm hover:bg-primary-container transition-all"></div>
 <div class="flex-1 bg-primary-container/20 h-[60%] rounded-t-sm hover:bg-primary-container transition-all"></div>
@@ -352,7 +385,7 @@
 <div class="flex-1 bg-primary-container/20 h-[45%] rounded-t-sm hover:bg-primary-container transition-all"></div>
 <div class="flex-1 bg-primary-container/20 h-[70%] rounded-t-sm hover:bg-primary-container transition-all"></div>
 </div>
-<div class="flex justify-between mt-4 text-text-muted font-label-caps px-4">
+<div class="flex justify-between mt-4 text-[10px] sm:text-label-caps text-text-muted font-label-caps px-1 sm:px-4">
 <span>MON</span>
 <span>TUE</span>
 <span>WED</span>
@@ -363,9 +396,10 @@
 </div>
 </div>
 </section>
+</div>
 </main>
 <!-- Toast Notifications Area -->
-<div class="fixed bottom-8 right-8 z-[100] flex flex-col gap-3" id="toast-container"></div>
+<div class="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-[100] flex flex-col gap-3 max-w-[calc(100vw-32px)]" id="toast-container"></div>
 <script>
         // API helper
         async function api(url, options = {}) {
@@ -412,6 +446,14 @@
 
         let currentSource = 'kiryuu';
 
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('sidebar-collapsed');
+            sidebar.classList.toggle('sidebar-open');
+            overlay.classList.toggle('hidden');
+        }
+
         function switchTab(tabId) {
             // Hide all sections
             document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
@@ -431,6 +473,14 @@
             }
 
             if (tabId === 'dashboard') loadManga();
+            
+            // Auto-close sidebar on mobile after selection
+            if (window.innerWidth < 1024) {
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar.classList.contains('sidebar-open')) {
+                    toggleSidebar();
+                }
+            }
         }
 
         function setSource(source) {
@@ -464,12 +514,20 @@
                 if (items.length === 0) {
                     list.innerHTML = `<div class="col-span-full py-20 text-center border-2 border-dashed border-surface-variant rounded-xl text-text-muted">
                         <span class="material-symbols-outlined text-4xl block mb-2">inventory_2</span>
-                        <p class="font-body-md">Library is currently empty. Add titles to track them.</p>
+                        <p class="font-body-md px-4">Library is currently empty. Add titles to track them.</p>
                     </div>`;
                     return;
                 }
 
+                function formatDate(d) {
+                    if (!d) return 'Never';
+                    const dt = new Date(d);
+                    return dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                }
                 list.innerHTML = items.map((m, idx) => `
+
+                <a href="${m.URL}" target="_blank" style="text-decoration: none; color: inherit;">
+                    
                 <div class="bg-surface-secondary border border-surface-variant p-padding-item rounded-xl hover:border-accent-hover transition-all group relative overflow-hidden">
                     <div class="flex gap-4">
                         <div class="w-16 h-20 bg-surface-container rounded-lg flex items-center justify-center shrink-0 border border-surface-variant">
@@ -480,15 +538,21 @@
                                 <span class="px-2 py-0.5 rounded-full ${m.Source === 'kiryuu' ? 'bg-success/10 text-success border-success/20' : 'bg-primary-container/10 text-primary-container border-primary-container/20'} font-badge text-badge border">
                                     ${m.Source.charAt(0).toUpperCase() + m.Source.slice(1)}
                                 </span>
-                                <button onclick="removeManga(${m.ID}, '${m.Title.replace(/'/g, "\\'")}')" class="opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onclick="removeManga(${m.ID}, '${m.Title.replace(/'/g, "\\'")}')" class="sm:opacity-0 group-hover:opacity-100 transition-opacity">
                                     <span class="material-symbols-outlined text-text-muted hover:text-error text-[18px]">delete</span>
                                 </button>
                             </div>
-                            <h3 class="font-card-title text-card-title text-text-high-contrast truncate">${m.Title}</h3>
+                            <h3 class="font-card-title text-card-title text-text-high-contrast truncate" title="${m.URL || ''}">${m.Title}</h3>
                             <p class="font-body-sm text-body-sm text-text-secondary mt-1">${m.LastChapter ? 'Ch. ' + m.LastChapter : 'No chapter yet'}</p>
+                            <div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-caption text-text-muted">
+                                <span title="Source ID">ID: ${m.SourceID || '—'}</span>
+                                <span title="Last checked">Checked: ${formatDate(m.LastChecked)}</span>
+                                <span title="Added on">Added: ${formatDate(m.CreatedAt)}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
+                </a>
             `).join('');
             } catch (e) {
                 list.innerHTML = '<div class="col-span-full py-20 text-center border-2 border-dashed border-surface-variant rounded-xl text-text-muted"><p class="font-body-md">Failed to load manga list.</p></div>';
@@ -511,7 +575,7 @@
                 }
                 
                 resultsDiv.innerHTML = results.map(r => `
-                    <div class="bg-surface-container/50 p-4 rounded-lg flex justify-between items-center border border-surface-variant hover:border-primary-container transition-colors group">
+                    <div class="bg-surface-container/50 p-4 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border border-surface-variant hover:border-primary-container transition-colors group">
                         <div class="flex items-center gap-4">
                             <div class="w-10 h-10 bg-surface-variant rounded flex items-center justify-center">
                                 <span class="material-symbols-outlined text-text-muted">book</span>
@@ -521,7 +585,7 @@
                                 <p class="text-caption text-text-muted">${r.URL}</p>
                             </div>
                         </div>
-                        <button class="bg-surface-variant hover:bg-primary-container text-text-high-contrast group-hover:text-on-primary-container px-4 py-1.5 rounded-lg text-badge font-bold transition-all" onclick="quickAdd('${currentSource}', '${r.Title.replace(/'/g, "\\'")}', '${r.URL.replace(/'/g, "\\'")}', '${(r.ID || '').replace(/'/g, "\\'")}')">ADD TO LIST</button>
+                        <button class="w-full sm:w-auto bg-surface-variant hover:bg-primary-container text-text-high-contrast group-hover:text-on-primary-container px-4 py-1.5 rounded-lg text-badge font-bold transition-all" onclick="quickAdd('${currentSource}', '${r.Title.replace(/'/g, "\\'")}', '${r.URL.replace(/'/g, "\\'")}', '${(r.ID || '').replace(/'/g, "\\'")}')">ADD TO LIST</button>
                     </div>
                 `).join('');
             } catch (e) {
@@ -588,11 +652,17 @@
 
                 btn.disabled = true;
                 btn.innerHTML = `<div class="loader mr-2 w-4 h-4"></div> Synchronizing...`;
+                function fmtDate(d) {
+                    if (!d) return '—';
+                    return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                }
                 tbody.innerHTML = items.map(m => `
                     <tr class="animate-pulse">
                         <td class="px-6 py-4 text-text-high-contrast">${m.Title}</td>
+                        <td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full ${m.Source === 'kiryuu' ? 'bg-success/10 text-success' : 'bg-primary-container/10 text-primary-container'} font-badge text-badge">${m.Source}</span></td>
                         <td class="px-6 py-4 text-text-secondary">${m.LastChapter || 'None'}</td>
                         <td class="px-6 py-4 text-text-muted">...</td>
+                        <td class="px-6 py-4 text-text-muted">${fmtDate(m.LastChecked)}</td>
                         <td class="px-6 py-4 text-text-muted">Checking</td>
                     </tr>
                 `).join('');
@@ -618,8 +688,10 @@
                     return `
                         <tr class="hover:bg-surface-container/30 transition-colors">
                             <td class="px-6 py-4 text-text-high-contrast font-medium">${m.Title}</td>
+                            <td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full ${m.Source === 'kiryuu' ? 'bg-success/10 text-success' : 'bg-primary-container/10 text-primary-container'} font-badge text-badge">${m.Source}</span></td>
                             <td class="px-6 py-4 text-text-secondary">${m.LastChapter || 'None'}</td>
                             <td class="px-6 py-4 text-text-high-contrast font-bold">${newChap || '...'}</td>
+                            <td class="px-6 py-4 text-caption text-text-muted">${fmtDate(m.LastChecked)}</td>
                             <td class="px-6 py-4">
                                 ${result.Error 
                                     ? `<span class="flex items-center gap-1 text-error text-badge"><span class="material-symbols-outlined text-[14px]">error</span> ERROR</span>` 
@@ -630,6 +702,9 @@
                         </tr>
                     `;
                 }).join('');
+                
+                // Reload the dashboard to reflect updated data
+                loadManga();
                 
                 showToast("Synchronization complete", "success");
             } catch (e) {
@@ -647,9 +722,9 @@
             if (type === "success") { colorClass = "border-success/40"; icon = "check_circle"; }
             if (type === "error") { colorClass = "border-error/40"; icon = "error"; }
 
-            toast.className = `toast-enter flex items-center gap-3 bg-surface-secondary border ${colorClass} px-5 py-4 rounded-xl shadow-2xl min-w-[300px]`;
+            toast.className = `toast-enter flex items-center gap-3 bg-surface-secondary border ${colorClass} px-5 py-4 rounded-xl shadow-2xl min-w-[280px] sm:min-w-[320px]`;
             toast.innerHTML = `
-                <span class="material-symbols-outlined ${type === 'success' ? 'text-success' : type === 'error' ? 'text-error' : 'text-primary-container'}">${icon}</span>
+                <span class="material-symbols-outlined shrink-0 ${type === 'success' ? 'text-success' : type === 'error' ? 'text-error' : 'text-primary-container'}">${icon}</span>
                 <span class="font-body-md text-text-high-contrast">${message}</span>
             `;
             
