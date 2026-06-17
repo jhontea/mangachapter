@@ -3,27 +3,36 @@ package storage
 import (
 	"context"
 	"errors"
+	"os"
 	"testing"
 )
 
-func openTestRepo(t *testing.T) *SQLiteRepository {
+func openTestPostgresRepo(t *testing.T) *PostgresRepository {
 	t.Helper()
 
-	repo, err := OpenSQLite(":memory:")
+	dsn := os.Getenv("TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("TEST_DATABASE_URL tidak diset, skip PostgreSQL test")
+	}
+
+	repo, err := OpenPostgres(dsn)
 	if err != nil {
-		t.Fatalf("OpenSQLite() error = %v", err)
+		t.Fatalf("OpenPostgres() error = %v", err)
 	}
 	t.Cleanup(func() { _ = repo.Close() })
 	return repo
 }
 
-func TestCRUD(t *testing.T) {
-	repo := openTestRepo(t)
+func TestPostgresCRUD(t *testing.T) {
+	repo := openTestPostgresRepo(t)
 	ctx := context.Background()
+
+	// Bersihkan tabel sebelum test
+	repo.db.Exec("TRUNCATE notifications, tracked_manga CASCADE")
 
 	m := &TrackedManga{
 		Source:         "kiryuu",
-		SourceID:       "one-piece",
+		SourceID:       "test-one-piece",
 		Title:          "One Piece",
 		URL:            "https://v6.kiryuu.to/manga/one-piece/",
 		LastChapter:    "Chapter 1100",
@@ -36,10 +45,12 @@ func TestCRUD(t *testing.T) {
 		t.Fatal("expected manga ID to be set")
 	}
 
+	// Test duplicate
 	if err := repo.AddManga(ctx, m); !errors.Is(err, ErrAlreadyExists) {
 		t.Fatalf("duplicate AddManga() error = %v, want ErrAlreadyExists", err)
 	}
 
+	// Test GetManga
 	got, err := repo.GetManga(ctx, m.ID)
 	if err != nil {
 		t.Fatalf("GetManga() error = %v", err)
@@ -48,6 +59,7 @@ func TestCRUD(t *testing.T) {
 		t.Errorf("Title = %q, want %q", got.Title, m.Title)
 	}
 
+	// Test ListManga
 	list, err := repo.ListManga(ctx)
 	if err != nil {
 		t.Fatalf("ListManga() error = %v", err)
@@ -56,6 +68,7 @@ func TestCRUD(t *testing.T) {
 		t.Fatalf("ListManga() len = %d, want 1", len(list))
 	}
 
+	// Test UpdateLastChapter
 	if err := repo.UpdateLastChapter(ctx, m.ID, ChapterUpdate{Number: "Chapter 1101", NumValue: 1101}); err != nil {
 		t.Fatalf("UpdateLastChapter() error = %v", err)
 	}
@@ -71,14 +84,17 @@ func TestCRUD(t *testing.T) {
 		t.Error("expected LastChecked to be set after update")
 	}
 
+	// Test UpdateLastChecked
 	if err := repo.UpdateLastChecked(ctx, m.ID); err != nil {
 		t.Fatalf("UpdateLastChecked() error = %v", err)
 	}
 
+	// Test LogNotification
 	if err := repo.LogNotification(ctx, m.ID, "Chapter 1101", "https://example.com/ch1101"); err != nil {
 		t.Fatalf("LogNotification() error = %v", err)
 	}
 
+	// Test RemoveManga
 	if err := repo.RemoveManga(ctx, m.ID); err != nil {
 		t.Fatalf("RemoveManga() error = %v", err)
 	}
@@ -88,9 +104,17 @@ func TestCRUD(t *testing.T) {
 	}
 }
 
-func TestRemoveNotFound(t *testing.T) {
-	repo := openTestRepo(t)
+func TestPostgresRemoveNotFound(t *testing.T) {
+	repo := openTestPostgresRepo(t)
 	if err := repo.RemoveManga(context.Background(), 999); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("RemoveManga() error = %v, want ErrNotFound", err)
+	}
+}
+
+func TestPostgresUpdateNotFound(t *testing.T) {
+	repo := openTestPostgresRepo(t)
+	err := repo.UpdateLastChapter(context.Background(), 999, ChapterUpdate{Number: "Ch 1", NumValue: 1})
+	if !errors.Is(err, ErrNotFound) {
+		t.Fatalf("UpdateLastChapter() error = %v, want ErrNotFound", err)
 	}
 }

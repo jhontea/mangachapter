@@ -1,0 +1,12 @@
+.git
+.gitignore
+.env
+.env.example
+config.yaml
+config.yaml.example
+data/
+testdata/
+docs/
+AGENTS.md
+README.md
+*.md

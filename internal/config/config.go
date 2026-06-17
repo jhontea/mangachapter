@@ -58,7 +58,8 @@ type TelegramConfig struct {
 
 // StorageConfig untuk pengaturan penyimpanan data.
 type StorageConfig struct {
-	Path string `yaml:"path"`
+	Path string `yaml:"path"` // SQLite path (lokal)
+	DSN  string `yaml:"dsn"`  // PostgreSQL DSN (Supabase)
 }
 
 // SourcesConfig untuk pengaturan sumber manga.
@@ -99,14 +100,19 @@ func Load(path string) (*Config, error) {
 		path = defaultConfigPath
 	}
 
+	cfg := defaultConfig()
+
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("baca config %q: %w", path, err)
-	}
-
-	cfg := defaultConfig()
-	if err := yaml.Unmarshal(data, cfg); err != nil {
-		return nil, fmt.Errorf("parse config: %w", err)
+		// Config file tidak wajib jika DATABASE_URL sudah di-set
+		if os.Getenv("DATABASE_URL") == "" {
+			return nil, fmt.Errorf("baca config %q: %w", path, err)
+		}
+		slog.Warn("config file tidak ditemukan, menggunakan env variables", "path", path)
+	} else {
+		if err := yaml.Unmarshal(data, cfg); err != nil {
+			return nil, fmt.Errorf("parse config: %w", err)
+		}
 	}
 
 	cfg.applyEnvOverrides()
@@ -157,8 +163,15 @@ func (c *Config) applyEnvOverrides() {
 	if v := os.Getenv("MANGA_TELEGRAM_CHAT_ID"); v != "" {
 		c.Telegram.ChatID = v
 	}
+	// Auto-enable Telegram jika token dan chat ID sudah di-set
+	if c.Telegram.Token != "" && c.Telegram.ChatID != "" {
+		c.Telegram.Enabled = true
+	}
 	if v := os.Getenv("MANGA_DB_PATH"); v != "" {
 		c.Storage.Path = v
+	}
+	if v := os.Getenv("DATABASE_URL"); v != "" {
+		c.Storage.DSN = v
 	}
 	if v := os.Getenv("MANGA_LOG_LEVEL"); v != "" {
 		c.Log.Level = v
@@ -166,8 +179,9 @@ func (c *Config) applyEnvOverrides() {
 }
 
 func (c *Config) validate() error {
-	if c.Storage.Path == "" {
-		return fmt.Errorf("storage.path wajib diisi")
+	// Storage: butuh DSN (PostgreSQL) atau path (SQLite)
+	if c.Storage.DSN == "" && c.Storage.Path == "" {
+		return fmt.Errorf("storage.dsn atau storage.path wajib diisi (set DATABASE_URL atau MANGA_DB_PATH)")
 	}
 
 	if c.Scheduler.Cron == "" {

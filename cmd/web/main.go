@@ -14,6 +14,7 @@ import (
 	"project/mangachapter/internal/checker"
 	"project/mangachapter/internal/config"
 	"project/mangachapter/internal/notifier"
+	"project/mangachapter/internal/scheduler"
 	"project/mangachapter/internal/source"
 	"project/mangachapter/internal/storage"
 )
@@ -67,7 +68,12 @@ func (s *server) init() error {
 
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo})))
 
-	repo, err := storage.Open(cfg.Storage.Path)
+	// Prioritaskan DSN (PostgreSQL) jika tersedia, fallback ke Path (SQLite)
+	dbDSN := cfg.Storage.DSN
+	if dbDSN == "" {
+		dbDSN = cfg.Storage.Path
+	}
+	repo, err := storage.Open(dbDSN)
 	if err != nil {
 		return fmt.Errorf("buka storage: %w", err)
 	}
@@ -107,6 +113,18 @@ func (s *server) init() error {
 	}
 
 	s.checker = checker.New(s.repo, source.AvailableMap(), s.notifier)
+
+	// Jalankan scheduler sebagai background goroutine
+	if s.cfg.Scheduler.Interval != "" {
+		interval := s.cfg.SchedulerInterval()
+		sched := scheduler.New(scheduler.CheckAllFunc(func(ctx context.Context) error {
+			_, err := s.checker.CheckAll(ctx)
+			return err
+		}), interval)
+		go sched.Run(context.Background())
+		slog.Info("scheduler dimulai", "interval", interval)
+	}
+
 	return nil
 }
 

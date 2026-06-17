@@ -44,7 +44,12 @@ func (a *app) init() error {
 	}
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})))
 
-	repo, err := storage.Open(cfg.Storage.Path)
+	// Prioritaskan DSN (PostgreSQL) jika tersedia, fallback ke Path (SQLite)
+	dbDSN := cfg.Storage.DSN
+	if dbDSN == "" {
+		dbDSN = cfg.Storage.Path
+	}
+	repo, err := storage.Open(dbDSN)
 	if err != nil {
 		return fmt.Errorf("buka storage: %w", err)
 	}

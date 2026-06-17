@@ -1,614 +1,372 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manga Chapter Notifier</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MangaVault | Technical Reader</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<style>
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0a0a0b;
-            color: #e4e4e7;
-            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background-color: #131314;
+            color: #e5e2e3;
             -webkit-font-smoothing: antialiased;
         }
-
-        /* Header */
-        .header {
-            padding: 20px 24px;
-            border-bottom: 1px solid #18181b;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
             background: #0a0a0b;
-            position: sticky;
-            top: 0;
-            z-index: 100;
         }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .brand-icon {
-            width: 32px;
-            height: 32px;
-            background: #7c3aed;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-        }
-
-        .brand h1 {
-            font-size: 16px;
-            font-weight: 600;
-            color: #fafafa;
-            letter-spacing: -0.01em;
-        }
-
-        .brand .subtitle {
-            font-size: 12px;
-            color: #71717a;
-        }
-
-        /* Nav tabs */
-        .nav {
-            display: flex;
-            gap: 2px;
-            background: #18181b;
-            border-radius: 8px;
-            padding: 3px;
-        }
-
-        .nav-btn {
-            padding: 7px 14px;
-            border: none;
-            background: transparent;
-            color: #a1a1aa;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            border-radius: 6px;
-            transition: all 0.15s;
-        }
-
-        .nav-btn:hover { color: #e4e4e7; }
-        .nav-btn.active {
+        .custom-scrollbar::-webkit-scrollbar-thumb {
             background: #27272a;
-            color: #fafafa;
-        }
-
-        /* Container */
-        .container {
-            max-width: 960px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-
-        /* Panels */
-        .panel { display: none; }
-        .panel.active { display: block; }
-
-        /* Stats */
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-
-        .stat {
-            background: #18181b;
-            border: 1px solid #27272a;
             border-radius: 10px;
-            padding: 16px;
         }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #fafafa;
-            letter-spacing: -0.02em;
-        }
-
-        .stat-label {
-            font-size: 11px;
-            color: #71717a;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-top: 4px;
-        }
-
-        /* Cards */
-        .card {
-            background: #18181b;
-            border: 1px solid #27272a;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 16px;
-        }
-
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-
-        .card-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #fafafa;
-        }
-
-        /* Manga list — card based */
-        .manga-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .manga-card {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 14px 16px;
-            background: #0f0f11;
-            border: 1px solid #27272a;
-            border-radius: 10px;
-            transition: border-color 0.15s;
-        }
-
-        .manga-card:hover {
-            border-color: #3f3f46;
-        }
-
-        .manga-source {
-            flex-shrink: 0;
-        }
-
-        .manga-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .manga-title {
-            font-size: 14px;
-            font-weight: 500;
-            color: #fafafa;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .manga-title a {
-            color: inherit;
-            text-decoration: none;
-        }
-
-        .manga-title a:hover { color: #a78bfa; }
-
-        .manga-meta {
-            font-size: 12px;
-            color: #71717a;
-            margin-top: 3px;
-        }
-
-        .manga-actions {
-            display: flex;
-            gap: 6px;
-            flex-shrink: 0;
-        }
-
-        /* Badges */
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 500;
-            letter-spacing: 0.02em;
-        }
-
-        .badge-kiryuu { background: #2e1065; color: #c4b5fd; }
-        .badge-mangaplus { background: #0c4a6e; color: #7dd3fc; }
-        .badge-new { background: #14532d; color: #86efac; }
-        .badge-ok { background: #1a2e1a; color: #a5d6a7; }
-        .badge-error { background: #4a1a1a; color: #fca5a5; }
-
-        /* Buttons */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 7px 14px;
-            border: none;
-            border-radius: 7px;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.15s;
-            white-space: nowrap;
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .btn-primary {
-            background: #7c3aed;
-            color: #fff;
-        }
-        .btn-primary:hover:not(:disabled) { background: #6d28d9; }
-
-        .btn-ghost {
-            background: transparent;
-            color: #a1a1aa;
-            border: 1px solid #27272a;
-        }
-        .btn-ghost:hover:not(:disabled) { background: #27272a; color: #e4e4e7; }
-
-        .btn-danger {
-            background: transparent;
-            color: #f87171;
-            border: 1px solid #27272a;
-        }
-        .btn-danger:hover:not(:disabled) { background: #4a1a1a; border-color: #7f1d1d; }
-
-        .btn-success {
-            background: #16a34a;
-            color: #fff;
-        }
-        .btn-success:hover:not(:disabled) { background: #15803d; }
-
-        .btn-sm {
-            padding: 5px 10px;
-            font-size: 12px;
-            border-radius: 6px;
-        }
-
-        .btn .spinner {
-            display: none;
-            width: 12px;
-            height: 12px;
-            border: 2px solid currentColor;
-            border-right-color: transparent;
+        .loader {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #27272a;
+            border-bottom-color: #7c3aed;
             border-radius: 50%;
-            animation: spin 0.5s linear infinite;
-        }
-
-        .btn.loading .spinner {
             display: inline-block;
+            box-sizing: border-box;
+            animation: rotation 0.6s linear infinite;
         }
-
-        .btn.loading .btn-text {
-            display: none;
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .toast-enter {
+            animation: slideIn 0.2s ease forwards;
         }
-
-        /* Forms */
-        .form-row {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-        }
-
-        .form-group {
-            flex: 1;
-            min-width: 180px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 11px;
-            color: #71717a;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 9px 12px;
-            background: #0f0f11;
-            border: 1px solid #27272a;
-            border-radius: 7px;
-            color: #e4e4e7;
-            font-size: 13px;
-            outline: none;
-            transition: border-color 0.15s;
-        }
-
-        input:focus, select:focus {
-            border-color: #7c3aed;
-        }
-
-        input::placeholder { color: #52525b; }
-
-        /* Search results */
-        .search-results {
-            margin-top: 12px;
-        }
-
-        .search-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 14px;
-            background: #0f0f11;
-            border: 1px solid #27272a;
-            border-radius: 8px;
-            margin-bottom: 6px;
-        }
-
-        .search-item-title {
-            font-size: 13px;
-            font-weight: 500;
-            color: #e4e4e7;
-        }
-
-        .search-item-url {
-            font-size: 11px;
-            color: #52525b;
-            margin-top: 2px;
-        }
-
-        /* Check results */
-        .check-results {
-            margin-top: 16px;
-        }
-
-        .check-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 14px;
-            background: #0f0f11;
-            border: 1px solid #27272a;
-            border-radius: 8px;
-            margin-bottom: 6px;
-        }
-
-        .check-icon {
-            font-size: 16px;
-            flex-shrink: 0;
-        }
-
-        .check-info { flex: 1; }
-
-        .check-title {
-            font-size: 13px;
-            font-weight: 500;
-            color: #e4e4e7;
-        }
-
-        .check-detail {
-            font-size: 12px;
-            color: #71717a;
-            margin-top: 2px;
-        }
-
-        /* Empty state */
-        .empty {
-            text-align: center;
-            padding: 48px 20px;
-            color: #52525b;
-        }
-
-        .empty-icon {
-            font-size: 32px;
-            margin-bottom: 12px;
-            opacity: 0.5;
-        }
-
-        .empty p {
-            font-size: 13px;
-        }
-
-        .empty .hint {
-            font-size: 12px;
-            color: #3f3f46;
-            margin-top: 6px;
-        }
-
-        /* Toast */
-        .toast-container {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .toast {
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-size: 13px;
-            color: #fff;
-            animation: slideIn 0.2s ease;
-            max-width: 360px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-
-        .toast-success { background: #16a34a; }
-        .toast-error { background: #dc2626; }
-        .toast-info { background: #2563eb; }
-
         @keyframes slideIn {
             from { transform: translateY(8px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
-
-        /* Responsive */
-        @media (max-width: 640px) {
-            .container { padding: 16px; }
-            .header { padding: 14px 16px; }
-            .brand .subtitle { display: none; }
-            .nav-btn { padding: 6px 10px; font-size: 12px; }
-            .manga-card { flex-wrap: wrap; }
-            .manga-actions { width: 100%; justify-content: flex-end; margin-top: 4px; }
-        }
     </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary-container": "#7c3aed",
+                      "secondary-fixed": "#e4e1e6",
+                      "surface-secondary": "#0f0f11",
+                      "surface": "#131314",
+                      "surface-container": "#201f20",
+                      "surface-bright": "#3a393a",
+                      "background": "#131314",
+                      "secondary-fixed-dim": "#c8c5ca",
+                      "success": "#16a34a",
+                      "on-secondary-container": "#b6b4b8",
+                      "on-primary-container": "#ede0ff",
+                      "on-tertiary-fixed": "#1b1b1e",
+                      "tertiary": "#c8c6c9",
+                      "surface-container-lowest": "#0e0e0f",
+                      "on-primary-fixed-variant": "#5a00c6",
+                      "surface-variant": "#353436",
+                      "surface-container-low": "#1c1b1c",
+                      "tertiary-fixed-dim": "#c8c6c9",
+                      "surface-container-highest": "#353436",
+                      "on-background": "#e5e2e3",
+                      "secondary-container": "#47464a",
+                      "on-tertiary-container": "#e7e5e9",
+                      "secondary": "#c8c5ca",
+                      "tertiary-fixed": "#e4e1e5",
+                      "text-muted": "#71717a",
+                      "primary-fixed": "#eaddff",
+                      "surface-tint": "#d2bbff",
+                      "on-secondary-fixed": "#1b1b1e",
+                      "on-tertiary": "#303033",
+                      "error": "#dc2626",
+                      "on-error-container": "#ffdad6",
+                      "on-surface-variant": "#ccc3d8",
+                      "accent-hover": "#6d28d9",
+                      "surface-container-high": "#2a2a2b",
+                      "inverse-primary": "#732ee4",
+                      "outline": "#958da1",
+                      "inverse-on-surface": "#313031",
+                      "text-high-contrast": "#fafafa",
+                      "on-primary-fixed": "#25005a",
+                      "error-container": "#93000a",
+                      "outline-variant": "#4a4455",
+                      "text-primary": "#e4e4e4",
+                      "on-primary": "#3f008e",
+                      "on-error": "#690005",
+                      "on-secondary-fixed-variant": "#47464a",
+                      "tertiary-container": "#67666a",
+                      "primary-fixed-dim": "#d2bbff",
+                      "on-surface": "#e5e2e3",
+                      "surface-dim": "#131314",
+                      "primary": "#d2bbff",
+                      "text-secondary": "#a1a1aa",
+                      "link-hover": "#a78bfa",
+                      "inverse-surface": "#e5e2e3",
+                      "on-tertiary-fixed-variant": "#47464a",
+                      "on-secondary": "#303033"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "gutter-list": "8px",
+                      "gutter-grid": "12px",
+                      "container-max": "960px",
+                      "padding-card": "20px",
+                      "padding-item": "14px",
+                      "base": "4px",
+                      "margin-desktop": "24px",
+                      "margin-mobile": "16px"
+              },
+              "fontFamily": {
+                      "headline-sm": ["Inter"],
+                      "stat-value": ["Inter"],
+                      "body-md": ["Inter"],
+                      "card-title": ["Inter"],
+                      "badge": ["Inter"],
+                      "body-sm": ["Inter"],
+                      "label-caps": ["Inter"],
+                      "caption": ["Inter"]
+              },
+              "fontSize": {
+                      "headline-sm": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                      "stat-value": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                      "card-title": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                      "badge": ["11px", {"lineHeight": "1", "fontWeight": "500"}],
+                      "body-sm": ["13px", {"lineHeight": "18px", "fontWeight": "500"}],
+                      "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                      "caption": ["12px", {"lineHeight": "1.5", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    </script>
 </head>
-<body>
-    <div class="header">
-        <div class="brand">
-            <div class="brand-icon">📚</div>
-            <div>
-                <h1>Manga Chapter Notifier</h1>
-                <div class="subtitle">Track updates from Kiryuu & MangaPlus</div>
-            </div>
-        </div>
-        <nav class="nav">
-            <button class="nav-btn active" onclick="switchTab('manga', this)">My Manga</button>
-            <button class="nav-btn" onclick="switchTab('search', this)">Search</button>
-            <button class="nav-btn" onclick="switchTab('add', this)">Add</button>
-            <button class="nav-btn" onclick="switchTab('check', this)">Check</button>
-        </nav>
-    </div>
-
-    <div class="container">
-        <!-- My Manga Panel -->
-        <div id="panel-manga" class="panel active">
-            <div class="stats" id="stats-bar">
-                <div class="stat">
-                    <div class="stat-value" id="stat-total">0</div>
-                    <div class="stat-label">Tracked</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value" id="stat-kiryuu">0</div>
-                    <div class="stat-label">Kiryuu</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value" id="stat-mangaplus">0</div>
-                    <div class="stat-label">MangaPlus</div>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-title">Tracked Manga</span>
-                    <button class="btn btn-ghost btn-sm" onclick="loadManga()">↻ Refresh</button>
-                </div>
-                <div id="manga-list"></div>
-            </div>
-        </div>
-
-        <!-- Search Panel -->
-        <div id="panel-search" class="panel">
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-title">Search Manga</span>
-                </div>
-                <div class="form-row">
-                    <div class="form-group" style="max-width:160px;">
-                        <label>Source</label>
-                        <select id="search-source">
-                            <option value="kiryuu">Kiryuu</option>
-                            <option value="mangaplus">MangaPlus</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Query</label>
-                        <input type="text" id="search-query" placeholder="Enter manga title..." onkeydown="if(event.key==='Enter')doSearch()">
-                    </div>
-                    <div style="display:flex;align-items:flex-end;">
-                        <button class="btn btn-primary" onclick="doSearch()">Search</button>
-                    </div>
-                </div>
-                <div id="search-results" class="search-results"></div>
-            </div>
-        </div>
-
-        <!-- Add Panel -->
-        <div id="panel-add" class="panel">
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-title">Add Manga</span>
-                </div>
-                <div class="form-row">
-                    <div class="form-group" style="max-width:160px;">
-                        <label>Source</label>
-                        <select id="add-source" onchange="updateAddForm()">
-                            <option value="kiryuu">Kiryuu</option>
-                            <option value="mangaplus">MangaPlus</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Title</label>
-                        <input type="text" id="add-title" placeholder="Manga title">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group" id="add-url-group">
-                        <label>URL</label>
-                        <input type="text" id="add-url" placeholder="https://v6.kiryuu.to/manga/slug/">
-                    </div>
-                    <div class="form-group" id="add-id-group" style="display:none;">
-                        <label>Title ID</label>
-                        <input type="text" id="add-id" placeholder="Numeric title ID">
-                    </div>
-                </div>
-                <button class="btn btn-primary" onclick="doAdd()" id="btn-add">
-                    <span class="spinner"></span>
-                    <span class="btn-text">Add Manga</span>
+<body class="bg-background text-on-surface custom-scrollbar">
+<!-- Sidebar Navigation -->
+<aside class="fixed left-0 top-0 h-full w-64 bg-surface-secondary border-r border-surface-variant flex flex-col p-4 gap-4 z-40">
+<div class="flex items-center gap-3 px-2 py-4">
+<div class="w-8 h-8 bg-primary-container rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container text-[20px]" data-weight="fill">menu_book</span>
+</div>
+<div>
+<h1 class="font-headline-sm text-headline-sm font-black text-primary-container leading-none">MangaVault</h1>
+<p class="font-caption text-caption text-secondary-fixed-dim">Technical Reader</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1 mt-4">
+<button class="w-full flex items-center gap-3 px-3 py-2.5 transition-all duration-200 bg-primary-container text-on-primary-container rounded-lg font-bold" id="nav-dashboard" onclick="switchTab('dashboard')">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="font-body-md text-body-md">Home</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2.5 transition-all duration-200 text-secondary-fixed-dim hover:bg-surface-container-high rounded-lg group" id="nav-search" onclick="switchTab('search')">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary">explore</span>
+<span class="font-body-md text-body-md">Browse</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2.5 transition-all duration-200 text-secondary-fixed-dim hover:bg-surface-container-high rounded-lg group" id="nav-add" onclick="switchTab('add')">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary">add_box</span>
+<span class="font-body-md text-body-md">Add New</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2.5 transition-all duration-200 text-secondary-fixed-dim hover:bg-surface-container-high rounded-lg group" id="nav-check" onclick="switchTab('check')">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary">sync</span>
+<span class="font-body-md text-body-md">Check Updates</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2.5 transition-all duration-200 text-secondary-fixed-dim hover:bg-surface-container-high rounded-lg group" id="nav-stats" onclick="switchTab('stats')">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary">query_stats</span>
+<span class="font-body-md text-body-md">Stats</span>
+</button>
+</nav>
+<div class="mt-auto space-y-1">
+<button class="w-full flex items-center gap-3 px-3 py-2.5 transition-all duration-200 text-secondary-fixed-dim hover:bg-surface-container-high rounded-lg group">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2.5 transition-all duration-200 text-secondary-fixed-dim hover:bg-surface-container-high rounded-lg group">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+<span class="font-body-md text-body-md">Log Out</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 min-h-screen p-8 max-w-container-max mx-auto">
+<!-- Dashboard Section -->
+<section class="space-y-8" id="dashboard-section">
+<header class="flex justify-between items-end">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-text-high-contrast opacity-60 uppercase tracking-widest mb-1">Library Overview</h2>
+<h1 class="text-3xl font-bold text-text-high-contrast">Reading List</h1>
+</div>
+<div class="flex gap-4 items-center">
+<div class="flex flex-col items-end">
+<span class="font-caption text-caption text-text-muted">Total Titles</span>
+<span class="font-stat-value text-stat-value text-primary-container" id="total-manga-count">00</span>
+</div>
+<div class="h-10 w-[1px] bg-surface-variant"></div>
+<div class="flex flex-col items-end">
+<span class="font-caption text-caption text-text-muted">Active Sources</span>
+<span class="font-stat-value text-stat-value text-text-high-contrast">02</span>
+</div>
+</div>
+</header>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter-grid" id="manga-list">
+<!-- Manga cards will be injected here -->
+</div>
+</section>
+<!-- Search Section -->
+<section class="hidden space-y-8" id="search-section">
+<header>
+<h2 class="font-headline-sm text-headline-sm text-text-high-contrast opacity-60 uppercase tracking-widest mb-1">Global Discovery</h2>
+<h1 class="text-3xl font-bold text-text-high-contrast">Search Sources</h1>
+</header>
+<div class="bg-surface-secondary border border-surface-variant rounded-xl p-6 space-y-6">
+<div class="flex flex-col sm:flex-row gap-4 items-center">
+<div class="flex bg-surface-container p-1 rounded-lg border border-surface-variant">
+<button class="px-4 py-1.5 rounded-md font-body-md text-body-md transition-all bg-primary-container text-on-primary-container" id="btn-kiryuu" onclick="setSource('kiryuu')">Kiryuu</button>
+<button class="px-4 py-1.5 rounded-md font-body-md text-body-md transition-all text-secondary-fixed-dim" id="btn-mangaplus" onclick="setSource('mangaplus')">MangaPlus</button>
+</div>
+<div class="relative flex-1 w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">search</span>
+<input class="w-full bg-surface-container-lowest border border-surface-variant rounded-lg pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-primary-container/30 focus:border-primary-container outline-none transition-all text-on-surface font-body-md" id="search-query" placeholder="Type manga title..." type="text"/>
+</div>
+<button class="bg-primary-container hover:bg-accent-hover text-on-primary-container px-6 py-2.5 rounded-lg font-bold transition-all flex items-center gap-2 shrink-0" onclick="doSearch()">
+<span>Search</span>
+</button>
+</div>
+<div class="min-h-[200px] border-t border-surface-variant pt-6 flex flex-col gap-2" id="search-results">
+<p class="text-center text-text-muted font-body-md py-12">Search for titles across configured sources</p>
+</div>
+</div>
+</section>
+<!-- Add Section -->
+<section class="hidden space-y-8" id="add-section">
+<header>
+<h2 class="font-headline-sm text-headline-sm text-text-high-contrast opacity-60 uppercase tracking-widest mb-1">System Registry</h2>
+<h1 class="text-3xl font-bold text-text-high-contrast">Manual Addition</h1>
+</header>
+<div class="max-w-xl bg-surface-secondary border border-surface-variant rounded-xl p-8 space-y-6 mx-auto">
+<div class="space-y-4">
+<div class="space-y-2">
+<label class="font-label-caps text-label-caps text-text-muted">MANGA TITLE</label>
+<input class="w-full bg-surface-container border border-surface-variant rounded-lg px-4 py-2.5 focus:border-primary-container outline-none text-on-surface font-body-md" id="add-name" placeholder="Full title of the manga" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="font-label-caps text-label-caps text-text-muted">SOURCE IDENTIFIER / URL</label>
+<input class="w-full bg-surface-container border border-surface-variant rounded-lg px-4 py-2.5 focus:border-primary-container outline-none text-on-surface font-body-md" id="add-url" placeholder="Slug or full URL" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="font-label-caps text-label-caps text-text-muted">SOURCE PROVIDER</label>
+<select class="w-full bg-surface-container border border-surface-variant rounded-lg px-4 py-2.5 focus:border-primary-container outline-none text-on-surface font-body-md appearance-none" id="add-source">
+<option value="kiryuu">Kiryuu</option>
+<option value="mangaplus">MangaPlus</option>
+</select>
+</div>
+<div class="space-y-2">
+<label class="font-label-caps text-label-caps text-text-muted">LATEST CHAPTER</label>
+<input class="w-full bg-surface-container border border-surface-variant rounded-lg px-4 py-2.5 focus:border-primary-container outline-none text-on-surface font-body-md" id="add-chapter" placeholder="e.g. 100" type="text"/>
+</div>
+</div>
+</div>
+<button class="w-full bg-primary-container hover:bg-accent-hover text-on-primary-container py-3 rounded-lg font-bold transition-all text-headline-sm mt-4" onclick="addManga()">
+                    Register to Library
                 </button>
-            </div>
-        </div>
-
-        <!-- Check Panel -->
-        <div id="panel-check" class="panel">
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-title">Check Updates</span>
-                </div>
-                <p style="color:#71717a;font-size:13px;margin-bottom:16px;line-height:1.5;">
-                    Check all tracked manga for new chapter updates. You'll be notified by email if new chapters are found.
-                </p>
-                <button class="btn btn-success" onclick="doCheckAll()" id="btn-check-all">
-                    <span class="spinner"></span>
-                    <span class="btn-text">Check All</span>
-                </button>
-                <div id="check-results" class="check-results"></div>
-            </div>
-        </div>
-    </div>
-
-    <div id="toast-container" class="toast-container"></div>
-
-    <script>
-        // Tab switching
-        function switchTab(name, btn) {
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-            btn.classList.add('active');
-            document.getElementById('panel-' + name).classList.add('active');
-            if (name === 'manga') loadManga();
-        }
-
-        // Toast
-        function showToast(msg, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = 'toast toast-' + type;
-            toast.textContent = msg;
-            container.appendChild(toast);
-            setTimeout(() => toast.remove(), 3500);
-        }
-
+</div>
+</section>
+<!-- Check Section -->
+<section class="hidden space-y-8" id="check-section">
+<header class="flex justify-between items-center">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-text-high-contrast opacity-60 uppercase tracking-widest mb-1">Delta Synchronization</h2>
+<h1 class="text-3xl font-bold text-text-high-contrast">Update Center</h1>
+</div>
+<button class="bg-primary-container hover:bg-accent-hover text-on-primary-container px-6 py-2.5 rounded-lg font-bold transition-all flex items-center gap-2" id="btn-check-all" onclick="checkAll()">
+<span class="material-symbols-outlined">sync</span>
+<span>Synchronize All</span>
+</button>
+</header>
+<div class="bg-surface-secondary border border-surface-variant rounded-xl overflow-hidden" id="check-results">
+<table class="w-full text-left font-body-md">
+<thead>
+<tr class="bg-surface-container border-b border-surface-variant">
+<th class="px-6 py-4 font-label-caps text-text-muted">TITLE</th>
+<th class="px-6 py-4 font-label-caps text-text-muted">LOCAL</th>
+<th class="px-6 py-4 font-label-caps text-text-muted">REMOTE</th>
+<th class="px-6 py-4 font-label-caps text-text-muted">STATUS</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-variant" id="update-tbody">
+<tr>
+<td class="px-6 py-12 text-center text-text-muted" colspan="4">
+                                Launch synchronization to detect new chapters
+                            </td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Stats Section -->
+<section class="hidden space-y-8" id="stats-section">
+<header>
+<h2 class="font-headline-sm text-headline-sm text-text-high-contrast opacity-60 uppercase tracking-widest mb-1">Performance Analytics</h2>
+<h1 class="text-3xl font-bold text-text-high-contrast">Reading Stats</h1>
+</header>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-surface-secondary border border-surface-variant p-6 rounded-xl">
+<p class="font-label-caps text-text-muted mb-2">CHAPTERS TRACKED</p>
+<p class="font-stat-value text-stat-value text-text-high-contrast">12,402</p>
+<p class="text-success text-body-sm mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+                        +12% this month
+                    </p>
+</div>
+<div class="bg-surface-secondary border border-surface-variant p-6 rounded-xl">
+<p class="font-label-caps text-text-muted mb-2">FAVORITE SOURCE</p>
+<p class="font-stat-value text-stat-value text-text-high-contrast">Kiryuu</p>
+<p class="text-text-muted text-body-sm mt-1">72% of library</p>
+</div>
+<div class="bg-surface-secondary border border-surface-variant p-6 rounded-xl">
+<p class="font-label-caps text-text-muted mb-2">SYNC ACCURACY</p>
+<p class="font-stat-value text-stat-value text-text-high-contrast">99.8%</p>
+<p class="text-text-muted text-body-sm mt-1">No errors detected</p>
+</div>
+</div>
+<div class="bg-surface-secondary border border-surface-variant rounded-xl p-8">
+<h3 class="font-card-title text-card-title text-text-high-contrast mb-6">Activity Timeline</h3>
+<div class="h-48 flex items-end gap-2 px-4">
+<!-- Faux Bar Chart -->
+<div class="flex-1 bg-primary-container/20 h-[40%] rounded-t-sm hover:bg-primary-container transition-all"></div>
+<div class="flex-1 bg-primary-container/20 h-[60%] rounded-t-sm hover:bg-primary-container transition-all"></div>
+<div class="flex-1 bg-primary-container/20 h-[30%] rounded-t-sm hover:bg-primary-container transition-all"></div>
+<div class="flex-1 bg-primary-container/20 h-[80%] rounded-t-sm hover:bg-primary-container transition-all"></div>
+<div class="flex-1 bg-primary-container/20 h-[55%] rounded-t-sm hover:bg-primary-container transition-all"></div>
+<div class="flex-1 bg-primary-container/20 h-[90%] rounded-t-sm hover:bg-primary-container transition-all"></div>
+<div class="flex-1 bg-primary-container/20 h-[45%] rounded-t-sm hover:bg-primary-container transition-all"></div>
+<div class="flex-1 bg-primary-container/20 h-[70%] rounded-t-sm hover:bg-primary-container transition-all"></div>
+</div>
+<div class="flex justify-between mt-4 text-text-muted font-label-caps px-4">
+<span>MON</span>
+<span>TUE</span>
+<span>WED</span>
+<span>THU</span>
+<span>FRI</span>
+<span>SAT</span>
+<span>SUN</span>
+</div>
+</div>
+</section>
+</main>
+<!-- Toast Notifications Area -->
+<div class="fixed bottom-8 right-8 z-[100] flex flex-col gap-3" id="toast-container"></div>
+<script>
         // API helper
         async function api(url, options = {}) {
             try {
@@ -652,268 +410,259 @@
             loadingButtons.forEach(id => applyLoadingState(id));
         }
 
-        // Load manga list
+        let currentSource = 'kiryuu';
+
+        function switchTab(tabId) {
+            // Hide all sections
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+            // Show selected
+            document.getElementById(`${tabId}-section`).classList.remove('hidden');
+            
+            // Update Nav Styles
+            document.querySelectorAll('aside nav button').forEach(btn => {
+                btn.classList.remove('bg-primary-container', 'text-on-primary-container', 'font-bold');
+                btn.classList.add('text-secondary-fixed-dim', 'hover:bg-surface-container-high');
+            });
+            
+            const activeBtn = document.getElementById(`nav-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-secondary-fixed-dim', 'hover:bg-surface-container-high');
+                activeBtn.classList.add('bg-primary-container', 'text-on-primary-container', 'font-bold');
+            }
+
+            if (tabId === 'dashboard') loadManga();
+        }
+
+        function setSource(source) {
+            currentSource = source;
+            const kBtn = document.getElementById('btn-kiryuu');
+            const mBtn = document.getElementById('btn-mangaplus');
+            
+            if (source === 'kiryuu') {
+                kBtn.classList.add('bg-primary-container', 'text-on-primary-container');
+                kBtn.classList.remove('text-secondary-fixed-dim');
+                mBtn.classList.remove('bg-primary-container', 'text-on-primary-container');
+                mBtn.classList.add('text-secondary-fixed-dim');
+            } else {
+                mBtn.classList.add('bg-primary-container', 'text-on-primary-container');
+                mBtn.classList.remove('text-secondary-fixed-dim');
+                kBtn.classList.remove('bg-primary-container', 'text-on-primary-container');
+                kBtn.classList.add('text-secondary-fixed-dim');
+            }
+        }
+
         async function loadManga() {
-            const container = document.getElementById('manga-list');
-            container.innerHTML = '<div class="empty"><div class="spinner" style="width:24px;height:24px;border-width:3px;border-color:#3f3f46;border-top-color:#7c3aed;margin:0 auto;"></div></div>';
+            const list = document.getElementById('manga-list');
+            const count = document.getElementById('total-manga-count');
+            
+            list.innerHTML = '<div class="col-span-full py-20 text-center border-2 border-dashed border-surface-variant rounded-xl text-text-muted"><div class="loader" style="margin: 0 auto;"></div></div>';
+
             try {
                 const items = await api('/api/manga');
-                if (!items || items.length === 0) {
-                    container.innerHTML = `
-                        <div class="empty">
-                            <div class="empty-icon">📚</div>
-                            <p>No manga tracked yet</p>
-                            <p class="hint">Go to <strong>Add</strong> or <strong>Search</strong> to start tracking.</p>
-                        </div>`;
-                    document.getElementById('stat-total').textContent = '0';
-                    document.getElementById('stat-kiryuu').textContent = '0';
-                    document.getElementById('stat-mangaplus').textContent = '0';
-                    return;
-                }
+                count.innerText = items.length.toString().padStart(2, '0');
 
-                document.getElementById('stat-total').textContent = items.length;
-                document.getElementById('stat-kiryuu').textContent = items.filter(m => m.Source === 'kiryuu').length;
-                document.getElementById('stat-mangaplus').textContent = items.filter(m => m.Source === 'mangaplus').length;
-
-                let html = '<div class="manga-grid">';
-                for (const m of items) {
-                    const badgeClass = m.Source === 'kiryuu' ? 'badge-kiryuu' : 'badge-mangaplus';
-                    const lastChecked = m.LastChecked ? new Date(m.LastChecked).toLocaleString() : 'Never';
-                    html += `
-                        <div class="manga-card">
-                            <div class="manga-source">
-                                <span class="badge ${badgeClass}">${m.Source}</span>
-                            </div>
-                            <div class="manga-info">
-                                <div class="manga-title"><a href="${m.URL}" target="_blank">${m.Title}</a></div>
-                                <div class="manga-meta">${m.LastChapter || 'No chapter yet'} · Checked: ${lastChecked}</div>
-                            </div>
-                            <div class="manga-actions">
-                                <button class="btn btn-ghost btn-sm" id="btn-check-${m.ID}" onclick="checkOne(${m.ID})">
-                                    <span class="spinner"></span>
-                                    <span class="btn-text">Check</span>
-                                </button>
-                                <button class="btn btn-danger btn-sm" onclick="removeManga(${m.ID}, '${m.Title.replace(/'/g, "\\'")}')">Remove</button>
-                            </div>
-                        </div>`;
-                }
-                html += '</div>';
-                container.innerHTML = html;
-            } catch (e) {
-                container.innerHTML = '<div class="empty"><p>Failed to load manga list.</p></div>';
-            }
-        }
-
-        // Search manga
-        async function doSearch() {
-            const source = document.getElementById('search-source').value;
-            const query = document.getElementById('search-query').value.trim();
-            if (!query) { showToast('Please enter a search query', 'error'); return; }
-
-            const container = document.getElementById('search-results');
-            container.innerHTML = '<div class="empty"><div class="spinner" style="width:20px;height:20px;border-width:2px;border-color:#3f3f46;border-top-color:#7c3aed;margin:0 auto;"></div></div>';
-
-            try {
-                const results = await api(`/api/manga/search?source=${encodeURIComponent(source)}&query=${encodeURIComponent(query)}`);
-                if (!results || results.length === 0) {
-                    container.innerHTML = '<div class="empty"><p>No results found</p></div>';
-                    return;
-                }
-                let html = '';
-                for (const r of results) {
-                    html += `<div class="search-item">
-                        <div>
-                            <div class="search-item-title">${r.Title}</div>
-                            <div class="search-item-url">${r.URL}</div>
-                        </div>
-                        <button class="btn btn-primary btn-sm" onclick="quickAdd('${source}', '${r.Title.replace(/'/g, "\\'")}', '${r.URL.replace(/'/g, "\\'")}', '${(r.ID || '').replace(/'/g, "\\'")}')">Add</button>
+                if (items.length === 0) {
+                    list.innerHTML = `<div class="col-span-full py-20 text-center border-2 border-dashed border-surface-variant rounded-xl text-text-muted">
+                        <span class="material-symbols-outlined text-4xl block mb-2">inventory_2</span>
+                        <p class="font-body-md">Library is currently empty. Add titles to track them.</p>
                     </div>`;
+                    return;
                 }
-                container.innerHTML = html;
+
+                list.innerHTML = items.map((m, idx) => `
+                <div class="bg-surface-secondary border border-surface-variant p-padding-item rounded-xl hover:border-accent-hover transition-all group relative overflow-hidden">
+                    <div class="flex gap-4">
+                        <div class="w-16 h-20 bg-surface-container rounded-lg flex items-center justify-center shrink-0 border border-surface-variant">
+                             <span class="material-symbols-outlined text-surface-variant text-3xl">menu_book</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-start mb-1">
+                                <span class="px-2 py-0.5 rounded-full ${m.Source === 'kiryuu' ? 'bg-success/10 text-success border-success/20' : 'bg-primary-container/10 text-primary-container border-primary-container/20'} font-badge text-badge border">
+                                    ${m.Source.charAt(0).toUpperCase() + m.Source.slice(1)}
+                                </span>
+                                <button onclick="removeManga(${m.ID}, '${m.Title.replace(/'/g, "\\'")}')" class="opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <span class="material-symbols-outlined text-text-muted hover:text-error text-[18px]">delete</span>
+                                </button>
+                            </div>
+                            <h3 class="font-card-title text-card-title text-text-high-contrast truncate">${m.Title}</h3>
+                            <p class="font-body-sm text-body-sm text-text-secondary mt-1">${m.LastChapter ? 'Ch. ' + m.LastChapter : 'No chapter yet'}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
             } catch (e) {
-                container.innerHTML = '<div class="empty"><p>Search failed</p></div>';
+                list.innerHTML = '<div class="col-span-full py-20 text-center border-2 border-dashed border-surface-variant rounded-xl text-text-muted"><p class="font-body-md">Failed to load manga list.</p></div>';
             }
         }
 
-        // Quick add
+        async function doSearch() {
+            const query = document.getElementById('search-query').value;
+            const resultsDiv = document.getElementById('search-results');
+            
+            if (!query) return;
+
+            resultsDiv.innerHTML = `<div class="flex justify-center py-12"><div class="loader"></div></div>`;
+            
+            try {
+                const results = await api(`/api/manga/search?source=${encodeURIComponent(currentSource)}&query=${encodeURIComponent(query)}`);
+                if (!results || results.length === 0) {
+                    resultsDiv.innerHTML = '<div class="text-center text-text-muted font-body-md py-12">No results found</div>';
+                    return;
+                }
+                
+                resultsDiv.innerHTML = results.map(r => `
+                    <div class="bg-surface-container/50 p-4 rounded-lg flex justify-between items-center border border-surface-variant hover:border-primary-container transition-colors group">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 bg-surface-variant rounded flex items-center justify-center">
+                                <span class="material-symbols-outlined text-text-muted">book</span>
+                            </div>
+                            <div>
+                                <h4 class="font-card-title text-card-title text-text-high-contrast">${r.Title}</h4>
+                                <p class="text-caption text-text-muted">${r.URL}</p>
+                            </div>
+                        </div>
+                        <button class="bg-surface-variant hover:bg-primary-container text-text-high-contrast group-hover:text-on-primary-container px-4 py-1.5 rounded-lg text-badge font-bold transition-all" onclick="quickAdd('${currentSource}', '${r.Title.replace(/'/g, "\\'")}', '${r.URL.replace(/'/g, "\\'")}', '${(r.ID || '').replace(/'/g, "\\'")}')">ADD TO LIST</button>
+                    </div>
+                `).join('');
+            } catch (e) {
+                resultsDiv.innerHTML = '<div class="text-center text-text-muted font-body-md py-12">Search failed</div>';
+            }
+        }
+
         async function quickAdd(source, title, url, sourceId) {
             try {
                 await api('/api/manga', {
                     method: 'POST',
                     body: JSON.stringify({ source, title, url, source_id: sourceId })
                 });
-                showToast(`Added "${title}"`, 'success');
+                showToast(`Added "${title}"`, "success");
             } catch (e) {}
         }
 
-        // Add manga
-        async function doAdd() {
+        async function addManga() {
+            const name = document.getElementById('add-name').value;
+            const url = document.getElementById('add-url').value;
             const source = document.getElementById('add-source').value;
-            const title = document.getElementById('add-title').value.trim();
-            const url = document.getElementById('add-url').value.trim();
-            const sourceId = document.getElementById('add-id').value.trim();
+            const chapter = document.getElementById('add-chapter').value;
 
-            if (!title) { showToast('Title is required', 'error'); return; }
-            if (source === 'kiryuu' && !url) { showToast('URL is required for Kiryuu', 'error'); return; }
-            if (source === 'mangaplus' && !sourceId) { showToast('Title ID is required for MangaPlus', 'error'); return; }
-
-            const btnId = 'btn-add';
-            loadingButtons.add(btnId);
-            applyLoadingState(btnId);
+            if (!name || !url) {
+                showToast("Please fill in required fields", "error");
+                return;
+            }
 
             try {
-                const body = { source, title };
-                if (source === 'kiryuu') {
-                    body.url = url;
-                    body.source_id = sourceId || '';
-                } else {
-                    body.url = `https://mangaplus.shueisha.co.jp/titles/${sourceId}`;
-                    body.source_id = sourceId;
-                }
-                await api('/api/manga', { method: 'POST', body: JSON.stringify(body) });
-                showToast(`Added "${title}"`, 'success');
-                document.getElementById('add-title').value = '';
+                await api('/api/manga', {
+                    method: 'POST',
+                    body: JSON.stringify({ source, title: name, url, chapter })
+                });
+                showToast(`Added ${name} successfully`, "success");
+                
+                // Clear fields
+                document.getElementById('add-name').value = '';
                 document.getElementById('add-url').value = '';
-                document.getElementById('add-id').value = '';
-            } catch (e) {} finally {
-                loadingButtons.delete(btnId);
-                clearLoadingState(btnId);
-            }
+                document.getElementById('add-chapter').value = '';
+                
+                switchTab('dashboard');
+            } catch (e) {}
         }
 
-        // Update add form
-        function updateAddForm() {
-            const source = document.getElementById('add-source').value;
-            document.getElementById('add-url-group').style.display = source === 'kiryuu' ? 'block' : 'none';
-            document.getElementById('add-id-group').style.display = source === 'mangaplus' ? 'block' : 'none';
-        }
-
-        // Remove manga
         async function removeManga(id, title) {
             if (!confirm(`Remove "${title}" from tracking?`)) return;
             try {
                 await api(`/api/manga/${id}`, { method: 'DELETE' });
-                showToast(`Removed "${title}"`, 'success');
+                showToast(`Removed "${title}"`, "success");
                 loadManga();
             } catch (e) {}
         }
 
-        // Check single manga
-        async function checkOne(id) {
-            const btnId = 'btn-check-' + id;
-            loadingButtons.add(btnId);
-            applyLoadingState(btnId);
+        async function checkAll() {
+            const tbody = document.getElementById('update-tbody');
+            const btn = document.getElementById('btn-check-all');
+            
             try {
-                const result = await api(`/api/manga/${id}`, { method: 'POST' });
-                if (result.NewChapter) {
-                    showToast(`New chapter: ${result.NewChapter} for "${result.Title}"`, 'success');
-                } else if (result.Error) {
-                    showToast(`Error: ${result.Error}`, 'error');
-                } else {
-                    showToast(`No new chapter for "${result.Title}"`, 'info');
-                }
-            } catch (e) {} finally {
-                loadingButtons.delete(btnId);
-                clearLoadingState(btnId);
-                await loadManga();
-                restoreLoadingStates();
-            }
-        }
-
-        // Check all manga — fires individual checkOne requests concurrently,
-        // results appear one-by-one as each finishes
-        async function doCheckAll() {
-            const btnId = 'btn-check-all';
-            loadingButtons.add(btnId);
-            applyLoadingState(btnId);
-
-            const container = document.getElementById('check-results');
-            container.innerHTML = '<div class="empty"><div class="spinner" style="width:20px;height:20px;border-width:2px;border-color:#3f3f46;border-top-color:#7c3aed;margin:0 auto;"></div><p style="margin-top:10px;color:#71717a;">Checking all manga...</p></div>';
-
-            try {
-                // 1. Fetch manga list
                 const items = await api('/api/manga');
-                if (!items || items.length === 0) {
-                    container.innerHTML = '<div class="empty"><p>No manga to check</p></div>';
+                if (items.length === 0) {
+                    showToast("Library is empty", "error");
                     return;
                 }
 
-                // 2. Clear loading text, prepare results area
-                let html = '';
-                let countDone = 0;
-                let countTotal = items.length;
+                btn.disabled = true;
+                btn.innerHTML = `<div class="loader mr-2 w-4 h-4"></div> Synchronizing...`;
+                tbody.innerHTML = items.map(m => `
+                    <tr class="animate-pulse">
+                        <td class="px-6 py-4 text-text-high-contrast">${m.Title}</td>
+                        <td class="px-6 py-4 text-text-secondary">${m.LastChapter || 'None'}</td>
+                        <td class="px-6 py-4 text-text-muted">...</td>
+                        <td class="px-6 py-4 text-text-muted">Checking</td>
+                    </tr>
+                `).join('');
 
-                // Update status line
-                const statusId = 'check-status-' + Date.now();
-                html = `<div id="${statusId}" class="check-item">
-                    <div class="check-icon">⏳</div>
-                    <div class="check-info">
-                        <div class="check-detail">Checking 0/${countTotal}...</div>
-                    </div>
-                </div>`;
-                container.innerHTML = html;
-
-                // 3. Fire all checks concurrently
-                const promises = items.map((m) =>
+                // Check all concurrently
+                const promises = items.map(m => 
                     api(`/api/manga/${m.ID}`, { method: 'POST' })
-                        .then((r) => ({ manga: m, result: r }))
-                        .catch((e) => ({ manga: m, result: { Error: e.message } }))
+                        .then(result => ({ manga: m, result }))
+                        .catch(e => ({ manga: m, result: { Error: e.message } }))
                 );
 
-                // 4. As each settles, append result to container
-                for (const promise of promises) {
-                    promise.then(({ manga: m, result: r }) => {
-                        countDone++;
-                        let icon = '✅';
-                        let detail = 'No new chapter';
-                        let badgeClass = 'badge-ok';
-                        if (r.Error) {
-                            icon = '❌';
-                            detail = r.Error;
-                            badgeClass = 'badge-error';
-                        } else if (r.NewChapter) {
-                            icon = '🆕';
-                            detail = `New: ${r.NewChapter}`;
-                            badgeClass = 'badge-new';
-                        }
-                        const badgeSource = m.Source === 'kiryuu' ? 'badge-kiryuu' : 'badge-mangaplus';
-                        const itemHtml = `<div class="check-item">
-                            <div class="check-icon">${icon}</div>
-                            <div class="check-info">
-                                <div class="check-title">${m.Title} <span class="badge ${badgeSource}">${m.Source}</span></div>
-                                <div class="check-detail">${detail}</div>
-                            </div>
-                        </div>`;
-
-                        // Insert before the status line
-                        const statusEl = document.getElementById(statusId);
-                        if (statusEl) {
-                            statusEl.insertAdjacentHTML('beforebegin', itemHtml);
-                            // Update status counter
-                            const detailEl = statusEl.querySelector('.check-detail');
-                            if (detailEl) detailEl.textContent = `Checking ${countDone}/${countTotal}...`;
-                        }
-                    });
-                }
-
-                // 5. Wait for all to settle
-                await Promise.allSettled(promises);
-
-                // Remove status line
-                const statusEl = document.getElementById(statusId);
-                if (statusEl) statusEl.remove();
+                const results = await Promise.allSettled(promises);
+                
+                btn.disabled = false;
+                btn.innerHTML = `<span class="material-symbols-outlined">sync</span> <span>Synchronize All</span>`;
+                
+                tbody.innerHTML = results.map((r, idx) => {
+                    const m = items[idx];
+                    const result = r.status === 'fulfilled' ? r.value.result : { Error: 'Request failed' };
+                    const newChap = result.NewChapter || m.LastChapter;
+                    const updated = result.NewChapter && result.NewChapter !== m.LastChapter;
+                    
+                    return `
+                        <tr class="hover:bg-surface-container/30 transition-colors">
+                            <td class="px-6 py-4 text-text-high-contrast font-medium">${m.Title}</td>
+                            <td class="px-6 py-4 text-text-secondary">${m.LastChapter || 'None'}</td>
+                            <td class="px-6 py-4 text-text-high-contrast font-bold">${newChap || '...'}</td>
+                            <td class="px-6 py-4">
+                                ${result.Error 
+                                    ? `<span class="flex items-center gap-1 text-error text-badge"><span class="material-symbols-outlined text-[14px]">error</span> ERROR</span>` 
+                                    : updated 
+                                        ? `<span class="flex items-center gap-1 text-success text-badge"><span class="material-symbols-outlined text-[14px]">arrow_upward</span> NEW</span>` 
+                                        : `<span class="text-text-muted text-badge uppercase">Up to date</span>`}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+                
+                showToast("Synchronization complete", "success");
             } catch (e) {
-                container.innerHTML = '<div class="empty"><p>Check failed</p></div>';
-            } finally {
-                loadingButtons.delete(btnId);
-                clearLoadingState(btnId);
-                await loadManga();
-                restoreLoadingStates();
+                showToast("Check failed", "error");
             }
         }
 
+        function showToast(message, type) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let colorClass = "border-surface-variant";
+            let icon = "info";
+            
+            if (type === "success") { colorClass = "border-success/40"; icon = "check_circle"; }
+            if (type === "error") { colorClass = "border-error/40"; icon = "error"; }
+
+            toast.className = `toast-enter flex items-center gap-3 bg-surface-secondary border ${colorClass} px-5 py-4 rounded-xl shadow-2xl min-w-[300px]`;
+            toast.innerHTML = `
+                <span class="material-symbols-outlined ${type === 'success' ? 'text-success' : type === 'error' ? 'text-error' : 'text-primary-container'}">${icon}</span>
+                <span class="font-body-md text-text-high-contrast">${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
         // Initialize
-        loadManga();
+        window.onload = () => {
+            loadManga();
+        };
     </script>
-</body>
-</html>
+</body></html>

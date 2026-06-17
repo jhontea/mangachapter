@@ -45,8 +45,8 @@ type SQLiteRepository struct {
 	db *sql.DB
 }
 
-// Open membuka koneksi ke database SQLite dan menjalankan migrasi.
-func Open(path string) (*SQLiteRepository, error) {
+// OpenSQLite membuka koneksi ke database SQLite dan menjalankan migrasi.
+func OpenSQLite(path string) (*SQLiteRepository, error) {
 	if path != ":memory:" {
 		dir := filepath.Dir(path)
 		if dir != "" && dir != "." {
