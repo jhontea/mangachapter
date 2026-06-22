@@ -24,7 +24,6 @@ const (
 // MangaPlus mengimplementasikan Source untuk Manga Plus API.
 type MangaPlus struct {
 	httpClient *HTTPClient
-	language   string
 	secret     *string
 }
 
@@ -58,8 +57,7 @@ type mangaPlusAllTitlesViewV2 struct {
 }
 
 type mangaPlusAllTitlesGroup struct {
-	TheTitle string           `json:"theTitle"`
-	Titles   []mangaPlusTitle `json:"titles"`
+	Titles []mangaPlusTitle `json:"titles"`
 }
 
 type mangaPlusTitle struct {
@@ -68,13 +66,11 @@ type mangaPlusTitle struct {
 }
 
 type mangaPlusTitleDetailView struct {
-	Title            mangaPlusTitle              `json:"title"`
 	ChapterListV2    []mangaPlusChapter          `json:"chapterListV2"`
 	ChapterListGroup []mangaPlusChapterListGroup `json:"chapterListGroup"`
 }
 
 type mangaPlusChapter struct {
-	TitleID        int     `json:"titleId"`
 	ChapterID      int     `json:"chapterId"`
 	Name           string  `json:"name"`
 	SubTitle       *string `json:"subTitle"`
@@ -82,17 +78,15 @@ type mangaPlusChapter struct {
 }
 
 type mangaPlusChapterListGroup struct {
-	ChapterNumbers   string             `json:"chapterNumbers"`
 	FirstChapterList []mangaPlusChapter `json:"firstChapterList"`
 	MidChapterList   []mangaPlusChapter `json:"midChapterList"`
 	LastChapterList  []mangaPlusChapter `json:"lastChapterList"`
 }
 
 // NewMangaPlus membuat adapter sumber Manga Plus baru.
-func NewMangaPlus(language string) *MangaPlus {
+func NewMangaPlus(_ string) *MangaPlus {
 	mp := &MangaPlus{
 		httpClient: NewHTTPClient("MangaPlusShonenJump/"+mangaplusAppVer, 0),
-		language:   language,
 	}
 	// Coba registrasi device
 	if err := mp.register(); err != nil {

@@ -18,7 +18,6 @@ const (
 	defaultKiryuuBase    = "https://v6.kiryuu.to"
 	defaultKiryuuUA      = "MangaChapterNotifier/1.0 (+personal use)"
 	defaultKiryuuRate    = "2s"
-	defaultMangaPlusBase = "https://mangaplus.shueisha.co.jp"
 	defaultMangaPlusLang = "eng"
 )
 
@@ -77,7 +76,6 @@ type KiryuuConfig struct {
 
 // MangaPlusConfig untuk pengaturan sumber Manga Plus.
 type MangaPlusConfig struct {
-	BaseURL  string `yaml:"base_url"`
 	Language string `yaml:"language"`
 }
 
@@ -136,7 +134,6 @@ func defaultConfig() *Config {
 				RateLimit: defaultKiryuuRate,
 			},
 			MangaPlus: MangaPlusConfig{
-				BaseURL:  defaultMangaPlusBase,
 				Language: defaultMangaPlusLang,
 			},
 		},
@@ -151,6 +148,7 @@ func (c *Config) applyEnvOverrides() {
 	if v := os.Getenv("MANGA_SMTP_USERNAME"); v != "" {
 		c.Email.Username = v
 	}
+	// Support both TELEGRAM_* and MANGA_TELEGRAM_* env vars; MANGA_TELEGRAM_* takes precedence
 	if v := os.Getenv("TELEGRAM_TOKEN"); v != "" {
 		c.Telegram.Token = v
 	}
@@ -158,10 +156,10 @@ func (c *Config) applyEnvOverrides() {
 		c.Telegram.ChatID = v
 	}
 	if v := os.Getenv("MANGA_TELEGRAM_TOKEN"); v != "" {
-		c.Telegram.Token = v
+		c.Telegram.Token = v // overrides TELEGRAM_TOKEN
 	}
 	if v := os.Getenv("MANGA_TELEGRAM_CHAT_ID"); v != "" {
-		c.Telegram.ChatID = v
+		c.Telegram.ChatID = v // overrides TELEGRAM_CHAT_ID
 	}
 	// Auto-enable Telegram jika token dan chat ID sudah di-set
 	if c.Telegram.Token != "" && c.Telegram.ChatID != "" {

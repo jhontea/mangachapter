@@ -95,13 +95,6 @@ func (s *Scheduler) Stop() {
 	}
 }
 
-// IsRunning mengembalikan apakah scheduler sedang berjalan.
-func (s *Scheduler) IsRunning() bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.running
-}
-
 func (s *Scheduler) runCheck(ctx context.Context) {
 	slog.Info("scheduler: menjalankan pengecekan")
 

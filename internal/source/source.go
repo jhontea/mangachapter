@@ -133,12 +133,3 @@ func ParseChapterNumber(s string) (float64, string) {
 	}
 	return val, fmt.Sprintf("Chapter %s", numStr)
 }
-
-// ToChapterUpdate mengubah ChapterInfo ke tipe ChapterUpdate storage
-// dengan mengembalikan string nomor dan nilai numerik.
-func (c *ChapterInfo) ToChapterUpdate() (string, float64) {
-	if c == nil {
-		return "", 0
-	}
-	return c.Number, c.NumValue
-}

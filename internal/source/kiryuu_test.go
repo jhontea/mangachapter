@@ -22,7 +22,7 @@ func TestKiryuu_Search(t *testing.T) {
 	defer srv.Close()
 
 	client := NewHTTPClient("test-agent", 0)
-	k := NewKiryuu(srv.URL, "test-agent", client)
+	k := NewKiryuu(srv.URL, client)
 
 	results, err := k.Search(context.Background(), "one piece")
 	if err != nil {
@@ -67,7 +67,7 @@ func TestKiryuu_GetLatestChapter(t *testing.T) {
 	defer srv.Close()
 
 	client := NewHTTPClient("test-agent", 0)
-	k := NewKiryuu(srv.URL, "test-agent", client)
+	k := NewKiryuu(srv.URL, client)
 
 	// mangaURL from DB can have a different domain — we extract slug and use baseURL
 	oldDomainURL := "https://old-domain.example.com/manga/mairimashita-iruma-kun/"
@@ -88,7 +88,7 @@ func TestKiryuu_SearchHTTPError(t *testing.T) {
 	defer srv.Close()
 
 	client := NewHTTPClient("test-agent", 0)
-	k := NewKiryuu(srv.URL, "test-agent", client)
+	k := NewKiryuu(srv.URL, client)
 
 	_, err := k.Search(context.Background(), "test")
 	if err == nil {
@@ -103,7 +103,7 @@ func TestKiryuu_GetLatestChapterHTTPError(t *testing.T) {
 	defer srv.Close()
 
 	client := NewHTTPClient("test-agent", 0)
-	k := NewKiryuu(srv.URL, "test-agent", client)
+	k := NewKiryuu(srv.URL, client)
 
 	_, err := k.GetLatestChapter(context.Background(), "https://old-domain.example.com/manga/nonexistent/")
 	if err == nil {
@@ -127,7 +127,7 @@ func TestKiryuu_GetLatestChapterNoChapters(t *testing.T) {
 	defer srv.Close()
 
 	client := NewHTTPClient("test-agent", 0)
-	k := NewKiryuu(srv.URL, "test-agent", client)
+	k := NewKiryuu(srv.URL, client)
 
 	_, err := k.GetLatestChapter(context.Background(), srv.URL+"/manga/test/")
 	if err == nil {
@@ -142,7 +142,7 @@ func TestKiryuu_GetLatestChapterInvalidURL(t *testing.T) {
 	defer srv.Close()
 
 	client := NewHTTPClient("test-agent", 0)
-	k := NewKiryuu(srv.URL, "test-agent", client)
+	k := NewKiryuu(srv.URL, client)
 
 	// URL without /manga/ path — should fail to extract slug
 	_, err := k.GetLatestChapter(context.Background(), "https://example.com/invalid-path/")

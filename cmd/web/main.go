@@ -86,7 +86,6 @@ func (s *server) init() error {
 	)
 	kiryuu := source.NewKiryuu(
 		cfg.Sources.Kiryuu.BaseURL,
-		cfg.Sources.Kiryuu.UserAgent,
 		kiryuuClient,
 	)
 	source.Register("kiryuu", kiryuu)
@@ -215,12 +214,12 @@ func (s *server) handleMangaByID(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
 	// Ekstrak ID dari path: /api/manga/{id}
-	path := strings.TrimPrefix(r.URL.Path, "/api/manga/")
-	if path == "" || path == "check-all" || path == "search" {
+	suffix := strings.TrimPrefix(r.URL.Path, "/api/manga/")
+	if suffix == "" || suffix == "check-all" || suffix == "search" {
 		return
 	}
 
-	idStr := strings.Split(path, "/")[0]
+	idStr := strings.SplitN(suffix, "/", 2)[0]
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		httpError(w, fmt.Errorf("ID manga tidak valid: %w", err))

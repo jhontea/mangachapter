@@ -67,7 +67,6 @@ func (c *Checker) CheckAll(ctx context.Context) ([]Result, error) {
 	)
 
 	for _, m := range mangaList {
-		m := m // tangkap variabel loop
 		g.Go(func() error {
 			r := c.checkOne(gctx, m)
 
@@ -105,19 +104,18 @@ func (c *Checker) CheckAll(ctx context.Context) ([]Result, error) {
 	}
 
 	// Cetak ringkasan
-	checked, newChapters, errors := 0, 0, 0
+	newChapters, errs := 0, 0
 	for _, r := range results {
-		checked++
 		if r.Error != nil {
-			errors++
+			errs++
 		} else if r.NewChapter != "" {
 			newChapters++
 		}
 	}
 	slog.Info("pemeriksaan selesai",
-		"diperiksa", checked,
+		"diperiksa", len(results),
 		"chapter_baru", newChapters,
-		"error", errors,
+		"error", errs,
 	)
 
 	return results, nil

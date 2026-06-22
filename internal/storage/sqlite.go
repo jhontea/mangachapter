@@ -264,13 +264,14 @@ func scanTrackedManga(row rowScanner) (*TrackedManga, error) {
 	return &m, nil
 }
 
+var sqliteTimeFormats = []string{
+	"2006-01-02 15:04:05",
+	time.RFC3339,
+	"2006-01-02T15:04:05Z",
+}
+
 func parseSQLiteTime(value string) (time.Time, error) {
-	formats := []string{
-		"2006-01-02 15:04:05",
-		time.RFC3339,
-		"2006-01-02T15:04:05Z",
-	}
-	for _, layout := range formats {
+	for _, layout := range sqliteTimeFormats {
 		if t, err := time.Parse(layout, value); err == nil {
 			return t, nil
 		}

@@ -60,15 +60,15 @@ func (e *EmailNotifier) SendNewChapter(ctx context.Context, n NewChapterNotifica
 // buildBody membuat isi email teks biasa.
 func (e *EmailNotifier) buildBody(n NewChapterNotification) string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("Manga chapter baru terdeteksi!\n\n"))
-	sb.WriteString(fmt.Sprintf("Manga   : %s\n", n.MangaTitle))
-	sb.WriteString(fmt.Sprintf("Sumber  : %s\n", n.Source))
-	sb.WriteString(fmt.Sprintf("Chapter : %s\n", n.Chapter))
+	sb.WriteString("Manga chapter baru terdeteksi!\n\n")
+	fmt.Fprintf(&sb, "Manga   : %s\n", n.MangaTitle)
+	fmt.Fprintf(&sb, "Sumber  : %s\n", n.Source)
+	fmt.Fprintf(&sb, "Chapter : %s\n", n.Chapter)
 	if n.PreviousChapter != "" {
-		sb.WriteString(fmt.Sprintf("Sebelum : %s\n", n.PreviousChapter))
+		fmt.Fprintf(&sb, "Sebelum : %s\n", n.PreviousChapter)
 	}
 	if n.ChapterURL != "" {
-		sb.WriteString(fmt.Sprintf("URL     : %s\n", n.ChapterURL))
+		fmt.Fprintf(&sb, "URL     : %s\n", n.ChapterURL)
 	}
 	sb.WriteString("\n---\nManga Chapter Notifier\n")
 	return sb.String()
@@ -77,9 +77,9 @@ func (e *EmailNotifier) buildBody(n NewChapterNotification) string {
 // buildMessage membuat pesan email lengkap dengan header.
 func (e *EmailNotifier) buildMessage(subject, body string) string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("From: %s\r\n", e.from))
-	sb.WriteString(fmt.Sprintf("To: %s\r\n", strings.Join(e.to, ", ")))
-	sb.WriteString(fmt.Sprintf("Subject: %s\r\n", subject))
+	fmt.Fprintf(&sb, "From: %s\r\n", e.from)
+	fmt.Fprintf(&sb, "To: %s\r\n", strings.Join(e.to, ", "))
+	fmt.Fprintf(&sb, "Subject: %s\r\n", subject)
 	sb.WriteString("MIME-Version: 1.0\r\n")
 	sb.WriteString("Content-Type: text/plain; charset=UTF-8\r\n")
 	sb.WriteString("\r\n")

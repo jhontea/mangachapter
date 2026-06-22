@@ -85,7 +85,6 @@ func (a *app) initSources() {
 	)
 	kiryuu := source.NewKiryuu(
 		a.cfg.Sources.Kiryuu.BaseURL,
-		a.cfg.Sources.Kiryuu.UserAgent,
 		kiryuuClient,
 	)
 	source.Register("kiryuu", kiryuu)

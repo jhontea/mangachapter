@@ -17,7 +17,7 @@ type Kiryuu struct {
 }
 
 // NewKiryuu membuat adapter sumber Kiryuu baru.
-func NewKiryuu(baseURL, userAgent string, client *HTTPClient) *Kiryuu {
+func NewKiryuu(baseURL string, client *HTTPClient) *Kiryuu {
 	return &Kiryuu{
 		baseURL: strings.TrimRight(baseURL, "/"),
 		client:  client,
@@ -26,11 +26,9 @@ func NewKiryuu(baseURL, userAgent string, client *HTTPClient) *Kiryuu {
 
 // kiryuuManga merepresentasikan manga dari WordPress REST API.
 type kiryuuManga struct {
-	ID       int         `json:"id"`
-	Title    kiryuuTitle `json:"title"`
-	Link     string      `json:"link"`
-	Slug     string      `json:"slug"`
-	Modified string      `json:"modified"`
+	Title kiryuuTitle `json:"title"`
+	Link  string      `json:"link"`
+	Slug  string      `json:"slug"`
 }
 
 type kiryuuTitle struct {
