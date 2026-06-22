@@ -1,0 +1,23 @@
+services:
+  manga-web:
+    image: mangachapter:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mangachapter
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8070:8080"
+    volumes:
+      - ./data:/app/data
+      - ./config.yaml:/app/config.yaml:ro
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Jakarta
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

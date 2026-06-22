@@ -115,14 +115,20 @@ func (s *server) init() error {
 	s.checker = checker.New(s.repo, source.AvailableMap(), s.notifier)
 
 	// Jalankan scheduler sebagai background goroutine
-	if s.cfg.Scheduler.Interval != "" {
-		interval := s.cfg.SchedulerInterval()
-		sched := scheduler.New(scheduler.CheckAllFunc(func(ctx context.Context) error {
-			_, err := s.checker.CheckAll(ctx)
-			return err
-		}), interval)
+	checkFn := scheduler.CheckAllFunc(func(ctx context.Context) error {
+		_, err := s.checker.CheckAll(ctx)
+		return err
+	})
+	var sched *scheduler.Scheduler
+	if s.cfg.Scheduler.Cron != "" {
+		sched = scheduler.NewWithCron(checkFn, s.cfg.Scheduler.Cron)
+		slog.Info("scheduler dimulai", "cron", s.cfg.Scheduler.Cron)
+	} else if s.cfg.Scheduler.Interval != "" {
+		sched = scheduler.New(checkFn, s.cfg.SchedulerInterval())
+		slog.Info("scheduler dimulai", "interval", s.cfg.Scheduler.Interval)
+	}
+	if sched != nil {
 		go sched.Run(context.Background())
-		slog.Info("scheduler dimulai", "interval", interval)
 	}
 
 	return nil

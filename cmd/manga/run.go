@@ -21,15 +21,19 @@ func newRunCmd(a *app) *cobra.Command {
 			}
 			defer a.close()
 
-			interval := a.cfg.SchedulerInterval()
-
 			// Buat fungsi checker yang mengabaikan hasil
 			checkFn := scheduler.CheckAllFunc(func(ctx context.Context) error {
 				_, err := a.checker.CheckAll(ctx)
 				return err
 			})
 
-			s := scheduler.New(checkFn, interval)
+			// Gunakan cron expression jika tersedia, fallback ke interval
+			var s *scheduler.Scheduler
+			if a.cfg.Scheduler.Cron != "" {
+				s = scheduler.NewWithCron(checkFn, a.cfg.Scheduler.Cron)
+			} else {
+				s = scheduler.New(checkFn, a.cfg.SchedulerInterval())
+			}
 
 			// Tangani SIGINT/SIGTERM
 			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
