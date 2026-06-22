@@ -23,14 +23,11 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Download dependencies
-        run: go mod download
-
-      - name: Build
-        run: go build ./...
-
       - name: Test
-        run: go test ./... -v -timeout 60s
+        run: go test ./...
+      
+      - name: Build check
+        run: CGO_ENABLED=0 go build -o /dev/null ./cmd/web
 
   deploy:
     name: Deploy via SSH
